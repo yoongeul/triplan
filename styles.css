@@ -346,3 +346,16 @@ dialog textarea{
 .map-link:hover{
   background:#eef8fc;
 }
+
+.schedule-date{
+  margin-bottom:10px;
+}
+
+.schedule-place{
+  margin-top:7px;
+  margin-bottom:7px;
+}
+
+.map-link{
+  margin-top:0;
+}

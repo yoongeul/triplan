@@ -232,27 +232,32 @@ function renderItems(){
         ${item.reservation_note?`<div>${esc(item.reservation_note)}</div>`:""}
         ${item.reservation_image_url?`<a class="reservation-image-link" href="${esc(item.reservation_image_url)}" target="_blank" rel="noopener"><img src="${esc(item.reservation_image_url)}" alt="예약 첨부 이미지"></a>`:""}
       </div>`:"";
-      const mapUrl = item.schedule_place
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        item.schedule_place
-      )}`
-    : "";
+    const mapUrl = item.schedule_place
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+          item.schedule_place
+        )}`
+      : "";
 
-      let scheduleInfo = "";
+    let scheduleInfo = "";
 
-      if ((item.section_type || "plan") === "schedule") {
-        scheduleInfo = `
-          <div class="schedule-date">
-            ${esc(item.schedule_date || "날짜 미정")}
-            ${esc(item.schedule_time || "")}
-          </div>
+    if ((item.section_type || "plan") === "schedule") {
+      scheduleInfo = `
+        <div class="schedule-date">
+          ${esc(item.schedule_date || "날짜 미정")}
+          ${esc(item.schedule_time || "")}
+        </div>
 
-          ${
-            item.schedule_place
-              ? `
-                <div class="item-note">
+        <div class="item-title">
+          ${esc(item.title)}
+        </div>
+
+        ${
+          item.schedule_place
+            ? `
+              <div class="schedule-location-row">
+                <span class="schedule-place">
                   📍 ${esc(item.schedule_place)}
-                </div>
+                </span>
 
                 <a
                   class="map-link"
@@ -262,17 +267,22 @@ function renderItems(){
                 >
                   지도에서 보기
                 </a>
-              `
-              : ""
-          }
-        `;
-      }
-      
+              </div>
+            `
+            : ""
+        }
+      `;
+    }
       return `<article class="item-card ${(item.section_type||"plan")==="schedule"?"schedule-item":""} ${item.done?"done":""}">
       <button class="check-btn ${item.done?"checked":""}" data-check="${item.id}">${item.done?"✓":""}</button>
       <div class="item-main">
         ${scheduleInfo}
-        <div class="item-title">${esc(item.title)}</div>
+
+        ${
+          (item.section_type || "plan") !== "schedule"
+            ? `<div class="item-title">${esc(item.title)}</div>`
+            : ""
+        }        
         ${item.note?`<p class="item-note">${esc(item.note)}</p>`:""}
         <div class="meta">
           <span class="badge category">${esc(item.category_name)}</span>

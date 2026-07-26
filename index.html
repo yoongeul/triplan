@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#fff8e8" />
+  <title>두 가족 여행 체크리스트</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">TWO FAMILY TRIP</p>
+      <h1>여행 준비 체크리스트 🧳</h1>
+      <p class="sub">두 가족이 함께 준비하고, 같이 체크해요.</p>
+    </div>
+    <button id="openSettingsBtn" class="icon-btn" aria-label="설정">⚙️</button>
+  </header>
+
+  <main class="container">
+    <section id="joinView" class="card join-card">
+      <h2>여행방 입장</h2>
+      <p class="muted">두 가족이 같은 여행 코드를 사용하면 동일한 체크리스트를 공유합니다.</p>
+      <label>여행 코드
+        <input id="roomCodeInput" maxlength="30" placeholder="예: JEJU2026" autocomplete="off" />
+      </label>
+      <button id="joinBtn" class="primary-btn">체크리스트 열기</button>
+      <p id="modeText" class="helper"></p>
+    </section>
+
+    <section id="appView" hidden>
+      <section class="summary card">
+        <div>
+          <strong id="tripTitle">우리들의 여행</strong>
+          <p id="roomLabel" class="muted"></p>
+        </div>
+        <div class="progress-info">
+          <strong id="progressText">0 / 0</strong>
+          <span>완료</span>
+        </div>
+        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+      </section>
+
+      <nav class="main-tabs" aria-label="여행 정보 구분">
+        <button class="main-tab active" data-section="plan">✓ 계획</button>
+        <button class="main-tab" data-section="schedule">📅 일정</button>
+      </nav>
+
+      <section class="toolbar">
+        <div id="categoryTabs" class="category-tabs"></div>
+        <button id="manageCategoriesBtn" class="secondary-btn">카테고리 관리</button>
+      </section>
+
+      <section class="section-head">
+        <div>
+          <h2 id="listTitle">전체 준비물</h2>
+          <p class="muted">체크·예약 기록·수정·삭제를 한곳에서 관리해요.</p>
+        </div>
+        <button id="addItemBtn" class="add-btn">＋ 항목 추가</button>
+      </section>
+
+      <section id="checklist" class="checklist"></section>
+    </section>
+  </main>
+
+  <dialog id="itemDialog">
+    <form id="itemForm">
+      <div class="dialog-head">
+        <h2 id="itemDialogTitle">항목 추가</h2>
+        <button type="button" class="icon-btn close-dialog" data-close-dialog>✕</button>
+      </div>
+      <input id="editingItemId" type="hidden" />
+
+      <label>구분
+        <select id="itemSectionInput" required>
+          <option value="plan">계획</option>
+          <option value="schedule">일정</option>
+        </select>
+      </label>
+
+      <label><span id="itemTitleLabel">준비 항목</span>
+        <input id="itemTitleInput" placeholder="예: 렌터카 예약" required />
+      </label>
+
+      <div id="scheduleFields" class="schedule-fields" hidden>
+        <div class="two-col">
+          <label>날짜
+            <input id="scheduleDateInput" type="date" />
+          </label>
+          <label>시간
+            <input id="scheduleTimeInput" type="time" />
+          </label>
+        </div>
+        <label>장소
+          <input id="schedulePlaceInput" placeholder="예: 제주공항 / ○○식당" />
+        </label>
+      </div>
+      <label>카테고리
+        <select id="itemCategoryInput" required></select>
+      </label>
+      <label>담당자 <span class="optional">(선택)</span>
+        <select id="itemOwnerInput">
+          <option value="">담당자 없음</option>
+        </select>
+      </label>
+      <label>메모
+        <textarea id="itemNoteInput" rows="3" placeholder="예: 7인승, 카시트 1개"></textarea>
+      </label>
+
+      <label class="toggle-row">
+        <span>
+          <strong>예약이 필요한 항목</strong>
+          <small>숙소·식당·티켓·렌터카 등에 사용</small>
+        </span>
+        <input id="reservationRequiredInput" type="checkbox" />
+      </label>
+
+      <div id="reservationFields" class="reservation-fields" hidden>
+        <label class="toggle-row compact">
+          <span><strong>예약 완료</strong></span>
+          <input id="reservationDoneInput" type="checkbox" />
+        </label>
+        <div class="two-col">
+          <label>예약일
+            <input id="reservationDateInput" type="date" />
+          </label>
+          <label>예약 시간
+            <input id="reservationTimeInput" type="time" />
+          </label>
+        </div>
+        <label>예약처
+          <input id="reservationPlaceInput" placeholder="예: 네이버 예약 / ○○호텔" />
+        </label>
+        <label>예약번호
+          <input id="reservationNumberInput" placeholder="예: AB123456" />
+        </label>
+        <label>예약 메모
+          <textarea id="reservationNoteInput" rows="3" placeholder="취소 가능일, 결제 금액 등을 기록하세요."></textarea>
+        </label>
+
+        <section class="attachment-box">
+          <div class="section-label">
+            <strong>예약 사진</strong>
+            <span>예약 확인 화면·티켓·영수증을 첨부하거나 붙여넣으세요.</span>
+          </div>
+          <label class="upload-button">
+            사진 선택
+            <input id="reservationImageInput" type="file" accept="image/*" hidden />
+          </label>
+          <div id="pasteImageArea" class="paste-area" tabindex="0">
+            이미지를 복사한 뒤 여기를 누르고 붙여넣기
+          </div>
+          <div id="reservationImagePreview" class="image-preview" hidden>
+            <img id="reservationPreviewImg" alt="예약 첨부 이미지 미리보기" />
+            <button id="removeReservationImageBtn" type="button" class="danger-small">사진 삭제</button>
+          </div>
+          <input id="reservationImageValue" type="hidden" />
+        </section>
+      </div>
+
+      <button type="submit" class="primary-btn">저장</button>
+    </form>
+  </dialog>
+
+  <dialog id="categoryDialog">
+    <form id="categoryForm">
+      <div class="dialog-head">
+        <h2>카테고리 관리</h2>
+        <button type="button" class="icon-btn close-dialog" data-close-dialog>✕</button>
+      </div>
+      <div class="inline-form">
+        <input id="newCategoryInput" placeholder="새 카테고리 이름" />
+        <button type="submit" class="add-btn">추가</button>
+      </div>
+      <div id="categoryManageList" class="category-manage-list"></div>
+    </form>
+  </dialog>
+
+  <dialog id="settingsDialog">
+    <form id="settingsForm">
+      <div class="dialog-head">
+        <h2>여행 설정</h2>
+        <button type="button" class="icon-btn close-dialog" data-close-dialog>✕</button>
+      </div>
+      <label>여행 이름
+        <input id="tripNameInput" placeholder="예: 여름 제주 여행" />
+      </label>
+      <section class="participant-section">
+        <div class="section-label">
+          <strong>참여자 관리</strong>
+          <span>사람 또는 가족 이름을 자유롭게 추가하세요.</span>
+        </div>
+        <div class="inline-form">
+          <input id="newParticipantInput" placeholder="예: 혜정 / 다연이네 / 현지네" />
+          <button id="addParticipantBtn" type="button" class="add-btn">추가</button>
+        </div>
+        <div id="participantManageList" class="category-manage-list"></div>
+      </section>
+      <button type="submit" class="primary-btn">설정 저장</button>
+      <button id="leaveRoomBtn" type="button" class="danger-btn">여행방 나가기</button>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>

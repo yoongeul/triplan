@@ -649,3 +649,42 @@ dialog textarea{
   padding:14px 16px;
   min-height:72px;
 }
+
+## 담당자 선택 체크박스 스타일
+
+.owner-checkbox-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:10px;
+}
+
+.owner-checkbox{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+
+  width:auto;
+  min-width:max-content;
+
+  padding:10px 14px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#fff;
+
+  white-space:nowrap;
+  cursor:pointer;
+}
+
+.owner-checkbox input{
+  flex:0 0 auto;
+  width:20px;
+  height:20px;
+  margin:0;
+}
+
+.owner-checkbox span{
+  display:inline-block;
+  white-space:nowrap;
+  line-height:1;
+}

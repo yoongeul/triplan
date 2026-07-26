@@ -675,12 +675,11 @@ function renderItems() {
               item.owner
                 ? `
                   <span class="badge owner">
-                    ${esc(ownerName(item.owner))}
+                    ${esc(item.owner.replaceAll(",", ", "))}
                   </span>
                 `
                 : ""
             }
-
             ${
               item.reservation_required
                 ? `
@@ -939,36 +938,135 @@ function renderItems() {
     
 } //renderitems 끝
 
-function openItemDialog(id=""){
-  $("#itemForm").reset(); $("#editingItemId").value=id;
-  const item=state.items.find(i=>i.id===id);
-  $("#itemDialogTitle").textContent=item?"항목 수정":"항목 추가";
-  $("#itemSectionInput").value=item?.section_type||state.selectedSection;
-  $("#itemOwnerInput").innerHTML=`<option value="">담당자 없음</option>`+
-    state.participants.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("");
-  if(item){
-    $("#itemTitleInput").value=item.title||"";
-    $("#scheduleDateInput").value=item.schedule_date||"";
-    $("#scheduleTimeInput").value=item.schedule_time||"";
-    $("#schedulePlaceInput").value=item.schedule_place||"";
-    $("#itemCategoryInput").value=item.category_name||state.categories[0]?.name||"";
-    $("#itemOwnerInput").value=item.owner||"공동";
-    $("#itemNoteInput").value=item.note||"";
-    $("#reservationRequiredInput").checked=!!item.reservation_required;
-    $("#reservationDoneInput").checked=!!item.reservation_done;
-    $("#reservationDateInput").value=item.reservation_date||"";
-    $("#reservationTimeInput").value=item.reservation_time||"";
-    $("#reservationPlaceInput").value=item.reservation_place||"";
-    $("#reservationNumberInput").value=item.reservation_number||"";
-    $("#reservationNoteInput").value=item.reservation_note||"";
-    $("#reservationImageValue").value=item.reservation_image_url||"";
+function renderOwnerCheckboxes(selectedOwners = []) {
+  const ownerBox = $("#itemOwnerInput");
+
+  if (!ownerBox) return;
+
+  if (!state.participants.length) {
+    ownerBox.innerHTML =
+      `<span class="muted">등록된 참여자가 없습니다.</span>`;
+    return;
   }
-  if(!item)$("#reservationImageValue").value="";
+
+  ownerBox.innerHTML = state.participants
+    .map(participant => {
+      const checked = selectedOwners.includes(participant.name)
+        ? "checked"
+        : "";
+
+      return `
+        <label class="owner-checkbox">
+          <input
+            type="checkbox"
+            name="itemOwner"
+            value="${esc(participant.name)}"
+            ${checked}
+          >
+          <span>${esc(participant.name)}</span>
+        </label>
+      `;
+    })
+    .join("");
+}
+
+function openItemDialog(id = "") {
+  $("#itemForm").reset();
+  $("#editingItemId").value = id;
+
+  const item = state.items.find(i => i.id === id);
+
+  $("#itemDialogTitle").textContent =
+    item ? "항목 수정" : "항목 추가";
+
+  $("#itemSectionInput").value =
+    item?.section_type || state.selectedSection;
+
+  // 기존 담당자 문자열을 배열로 변환
+  // 예: "다연,윤하" → ["다연", "윤하"]
+  const selectedOwners = item?.owner
+    ? item.owner
+        .split(",")
+        .map(name => name.trim())
+        .filter(Boolean)
+    : [];
+
+  // 담당자 체크박스 생성
+  $("#itemOwnerInput").innerHTML =
+    state.participants.length
+      ? state.participants
+          .map(
+            participant => `
+              <label class="owner-checkbox">
+                <input
+                  type="checkbox"
+                  name="itemOwner"
+                  value="${esc(participant.name)}"
+                  ${
+                    selectedOwners.includes(participant.name)
+                      ? "checked"
+                      : ""
+                  }
+                >
+                <span>${esc(participant.name)}</span>
+              </label>
+            `
+          )
+          .join("")
+      : `<span class="muted">등록된 담당자가 없어요.</span>`;
+
+  if (item) {
+    $("#itemTitleInput").value = item.title || "";
+    $("#scheduleDateInput").value =
+      item.schedule_date || "";
+    $("#scheduleTimeInput").value =
+      item.schedule_time || "";
+    $("#schedulePlaceInput").value =
+      item.schedule_place || "";
+
+    $("#itemCategoryInput").value =
+      item.category_name ||
+      state.categories[0]?.name ||
+      "";
+
+    $("#itemNoteInput").value = item.note || "";
+
+    $("#reservationRequiredInput").checked =
+      !!item.reservation_required;
+
+    $("#reservationDoneInput").checked =
+      !!item.reservation_done;
+
+    $("#reservationDateInput").value =
+      item.reservation_date || "";
+
+    $("#reservationTimeInput").value =
+      item.reservation_time || "";
+
+    $("#reservationPlaceInput").value =
+      item.reservation_place || "";
+
+    $("#reservationNumberInput").value =
+      item.reservation_number || "";
+
+    $("#reservationNoteInput").value =
+      item.reservation_note || "";
+
+    $("#reservationImageValue").value =
+      item.reservation_image_url || "";
+  }
+
+  if (!item) {
+    $("#reservationImageValue").value = "";
+  }
+
   updateReservationImagePreview();
   updateItemSectionFields();
   updateReservationFields();
+
   $("#itemDialog").showModal();
 }
+
 function updateItemSectionFields(){
   const isSchedule=$("#itemSectionInput").value==="schedule";
   $("#scheduleFields").hidden=!isSchedule;
@@ -1040,44 +1138,136 @@ async function handleReservationImage(file){
   }
 }
 
-async function saveItem(e){
+async function saveItem(e) {
   e.preventDefault();
-  const id=$("#editingItemId").value;
-  const reservationRequired=$("#reservationRequiredInput").checked;
-  const sectionType=$("#itemSectionInput").value;
-  const payload={
-    room_code:state.roomCode,
-    section_type:sectionType,
-    schedule_date:sectionType==="schedule"?($("#scheduleDateInput").value||null):null,
-    schedule_time:sectionType==="schedule"?($("#scheduleTimeInput").value||null):null,
-    schedule_place:sectionType==="schedule"?$("#schedulePlaceInput").value.trim():"",
-    title:$("#itemTitleInput").value.trim(),
-    category_name:$("#itemCategoryInput").value,
-    owner:$("#itemOwnerInput").value || "",
-    note:$("#itemNoteInput").value.trim(),
-    reservation_required:reservationRequired,
-    reservation_done:reservationRequired&&$("#reservationDoneInput").checked,
-    reservation_date:reservationRequired?($("#reservationDateInput").value||null):null,
-    reservation_time:reservationRequired?($("#reservationTimeInput").value||null):null,
-    reservation_place:reservationRequired?$("#reservationPlaceInput").value.trim():"",
-    reservation_number:reservationRequired?$("#reservationNumberInput").value.trim():"",
-    reservation_note:reservationRequired?$("#reservationNoteInput").value.trim():"",
-    reservation_image_url:reservationRequired?$("#reservationImageValue").value:""
-  };
-  if(!payload.title)return toast("준비 항목을 입력해 주세요.");
 
-  if(!cloudEnabled){
-    if(id){
-      const idx=state.items.findIndex(i=>i.id===id);
-      state.items[idx]={...state.items[idx],...payload};
-    }else state.items.push({id:uid(),done:false,...payload});
-    persistLocal(); render();
-  }else{
-    const q=id?db.from("trip_items").update(payload).eq("id",id):db.from("trip_items").insert(payload);
-    const {error}=await q;if(error)return toast(error.message);await reloadCloud();
+  const id = $("#editingItemId").value;
+  const reservationRequired =
+    $("#reservationRequiredInput").checked;
+  const sectionType = $("#itemSectionInput").value;
+
+  // 체크된 담당자들을 배열로 가져오기
+  const selectedOwners = [
+    ...document.querySelectorAll(
+      'input[name="itemOwner"]:checked'
+    )
+  ].map(input => input.value);
+
+  const payload = {
+    room_code: state.roomCode,
+    section_type: sectionType,
+
+    schedule_date:
+      sectionType === "schedule"
+        ? ($("#scheduleDateInput").value || null)
+        : null,
+
+    schedule_time:
+      sectionType === "schedule"
+        ? ($("#scheduleTimeInput").value || null)
+        : null,
+
+    schedule_place:
+      sectionType === "schedule"
+        ? $("#schedulePlaceInput").value.trim()
+        : "",
+
+    title: $("#itemTitleInput").value.trim(),
+    category_name: $("#itemCategoryInput").value,
+
+    // DB의 owner가 text이므로 쉼표로 연결해서 저장
+    owner: selectedOwners.join(","),
+
+    note: $("#itemNoteInput").value.trim(),
+
+    reservation_required: reservationRequired,
+
+    reservation_done:
+      reservationRequired &&
+      $("#reservationDoneInput").checked,
+
+    reservation_date:
+      reservationRequired
+        ? ($("#reservationDateInput").value || null)
+        : null,
+
+    reservation_time:
+      reservationRequired
+        ? ($("#reservationTimeInput").value || null)
+        : null,
+
+    reservation_place:
+      reservationRequired
+        ? $("#reservationPlaceInput").value.trim()
+        : "",
+
+    reservation_number:
+      reservationRequired
+        ? $("#reservationNumberInput").value.trim()
+        : "",
+
+    reservation_note:
+      reservationRequired
+        ? $("#reservationNoteInput").value.trim()
+        : "",
+
+    reservation_image_url:
+      reservationRequired
+        ? $("#reservationImageValue").value
+        : ""
+  };
+
+  if (!payload.title) {
+    return toast("준비 항목을 입력해 주세요.");
   }
-  $("#itemDialog").close(); toast(id?"수정했어요.":"추가했어요.");
+
+  if (!cloudEnabled) {
+    if (id) {
+      const idx = state.items.findIndex(
+        item => item.id === id
+      );
+
+      if (idx === -1) {
+        return toast("수정할 항목을 찾지 못했어요.");
+      }
+
+      state.items[idx] = {
+        ...state.items[idx],
+        ...payload
+      };
+    } else {
+      state.items.push({
+        id: uid(),
+        done: false,
+        ...payload
+      });
+    }
+
+    persistLocal();
+    render();
+  } else {
+    const query = id
+      ? db
+          .from("trip_items")
+          .update(payload)
+          .eq("id", id)
+      : db
+          .from("trip_items")
+          .insert(payload);
+
+    const { error } = await query;
+
+    if (error) {
+      return toast(error.message);
+    }
+
+    await reloadCloud();
+  }
+
+  $("#itemDialog").close();
+  toast(id ? "수정했어요." : "추가했어요.");
 }
+
 async function toggleItem(id){
   const item=state.items.find(i=>i.id===id);if(!item)return;
   if(!cloudEnabled){item.done=!item.done;persistLocal();render()}
@@ -1202,25 +1392,77 @@ async function deleteCategory(id,name){
   toast("카테고리를 삭제했어요.");
 }
 
-function renderParticipants(){
-  const ownerSelect=$("#itemOwnerInput");
-  if(ownerSelect){
-    const current=ownerSelect.value;
-    ownerSelect.innerHTML=`<option value="">담당자 없음</option>`+
-      state.participants.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("");
-    ownerSelect.value=current;
+function renderParticipants() {
+  const ownerBox = $("#itemOwnerInput");
+
+  if (ownerBox) {
+    // 현재 체크된 담당자들 기억
+    const current = [
+      ...ownerBox.querySelectorAll(
+        'input[name="itemOwner"]:checked'
+      )
+    ].map(input => input.value);
+
+    // 체크박스 다시 생성
+    ownerBox.innerHTML = state.participants.length
+      ? state.participants
+          .map(
+            participant => `
+              <label class="owner-checkbox">
+                <input
+                  type="checkbox"
+                  name="itemOwner"
+                  value="${esc(participant.name)}"
+                  ${
+                    current.includes(participant.name)
+                      ? "checked"
+                      : ""
+                  }
+                >
+                <span>${esc(participant.name)}</span>
+              </label>
+            `
+          )
+          .join("")
+      : `<span class="muted">등록된 담당자가 없습니다.</span>`;
   }
-  const list=$("#participantManageList");
-  if(!list)return;
-  list.innerHTML=state.participants.length?state.participants.map(p=>`
-    <div class="category-row">
-      <strong>${esc(p.name)}</strong>
-      <button type="button" class="delete-category" data-participant-id="${p.id}" data-participant-name="${esc(p.name)}">삭제</button>
-    </div>`).join(""):`<div class="empty">등록된 참여자가 없습니다.</div>`;
-  list.querySelectorAll("[data-participant-id]").forEach(btn=>{
-    btn.onclick=()=>deleteParticipant(btn.dataset.participantId,btn.dataset.participantName);
-  });
+
+  const list = $("#participantManageList");
+
+  if (!list) return;
+
+  list.innerHTML = state.participants.length
+    ? state.participants
+        .map(
+          p => `
+            <div class="category-row">
+              <strong>${esc(p.name)}</strong>
+
+              <button
+                type="button"
+                class="delete-category"
+                data-participant-id="${p.id}"
+                data-participant-name="${esc(p.name)}"
+              >
+                삭제
+              </button>
+            </div>
+          `
+        )
+        .join("")
+    : `<div class="empty">등록된 참여자가 없습니다.</div>`;
+
+  list
+    .querySelectorAll("[data-participant-id]")
+    .forEach(btn => {
+      btn.onclick = () =>
+        deleteParticipant(
+          btn.dataset.participantId,
+          btn.dataset.participantName
+        );
+    });
 }
+
 async function addParticipant(){
   const input=$("#newParticipantInput");
   const name=input.value.trim();

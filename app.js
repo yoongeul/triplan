@@ -698,8 +698,8 @@ function renderItems() {
             }
           </div>
 
-          ${reservation}
-          ${logArea}
+        ${reservation}
+        ${logArea}
         </div>
 
         <div class="actions">

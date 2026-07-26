@@ -1,3 +1,20 @@
+/* =========================================================
+   여행 앱 CSS 구성
+   1. 전역 변수 · 초기화
+   2. 기본 레이아웃 · 공통 UI
+   3. 일정 카드 · 카테고리
+   4. 다이얼로그 · 입력 폼
+   5. 여행 요약 · 모바일 Safari
+   6. 일정 묶음 · 지도 링크
+   7. 일정별 기록 · 날짜별 기록
+   8. 담당자 선택
+   9. 모바일
+   ========================================================= */
+
+/* =========================================================
+   1. 전역 변수 · 초기화
+   ========================================================= */
+
 :root{
   --bg:#fffaf0;--card:#fff;--text:#26231f;--muted:#777168;--line:#e8dfd0;
   --accent:#ffcf5b;--dark:#26231f;--green:#82c99a;--blue:#8ecae6;
@@ -6,6 +23,11 @@
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:linear-gradient(180deg,#fff4d2 0,var(--bg) 270px);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
 button,input,select,textarea{font:inherit}button{cursor:pointer}
+
+/* =========================================================
+   2. 기본 레이아웃 · 공통 UI
+   ========================================================= */
+
 .topbar{width:min(760px,calc(100% - 32px));margin:0 auto;padding:26px 0 15px;display:flex;justify-content:space-between;gap:16px}
 h1,h2,p{margin-top:0}h1{margin-bottom:8px;font-size:clamp(27px,7vw,38px);letter-spacing:-.045em}h2{font-size:20px;margin-bottom:5px}
 .eyebrow{font-size:11px;letter-spacing:.16em;font-weight:900;color:#9a7117;margin-bottom:7px}.sub,.muted,.helper{color:var(--muted)}.sub{margin:0}
@@ -17,12 +39,22 @@ input,select,textarea{width:100%;border:1px solid var(--line);border-radius:13px
 input:focus,select:focus,textarea:focus{border-color:#d4ab3c;box-shadow:0 0 0 3px rgba(255,207,91,.22)}
 .primary-btn,.danger-btn{width:100%;border:0;border-radius:14px;padding:14px 18px;font-weight:900}.primary-btn{background:var(--accent)}.danger-btn{margin-top:9px;background:#fff0f0;color:#a64141}
 .icon-btn{width:44px;height:44px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.85)}
+
+/* =========================================================
+   3. 진행 요약 · 툴바 · 카테고리
+   ========================================================= */
+
 .summary{padding:18px;display:grid;grid-template-columns:1fr auto;gap:12px}.summary p{margin:5px 0 0;font-size:13px}.progress-info{text-align:right}.progress-info strong{display:block;font-size:21px}.progress-info span{font-size:12px;color:var(--muted)}
 .progress-track{grid-column:1/-1;height:11px;background:#eee8dd;border-radius:999px;overflow:hidden}.progress-bar{height:100%;width:0;background:var(--green);transition:.2s}
 .toolbar{display:flex;gap:10px;align-items:center;margin:16px 0}.category-tabs{display:flex;gap:8px;overflow:auto;flex:1;scrollbar-width:none}
 .category-tab,.secondary-btn{white-space:nowrap;border:1px solid var(--line);border-radius:999px;background:#fff;padding:9px 13px;font-weight:800;color:var(--muted)}
 .category-tab.active{background:#fff2bf;border-color:#d8af40;color:var(--text)}.secondary-btn{border-radius:13px;color:var(--text)}
 .section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 2px 12px}.section-head p{margin:0;font-size:13px}.add-btn{border:0;border-radius:13px;background:var(--dark);color:#fff;padding:10px 13px;font-weight:900;white-space:nowrap}
+
+/* =========================================================
+   4. 일정 카드
+   ========================================================= */
+
 .checklist{display:grid;gap:10px}.item-card{padding:14px;display:flex;align-items:flex-start;gap:12px}.item-card.done{opacity:.62}.item-card.done .item-title{text-decoration:line-through}
 .check-btn{flex:0 0 auto;width:29px;height:29px;border:2px solid #d7d0c4;border-radius:9px;background:#fff;font-weight:900}.check-btn.checked{background:var(--green);border-color:var(--green)}
 .item-main{min-width:0;flex:1}.item-title{font-weight:900;line-height:1.4}.item-note{margin:7px 0 0;color:#5f5a52;font-size:13px;white-space:pre-wrap}
@@ -30,6 +62,11 @@ input:focus,select:focus,textarea:focus{border-color:#d4ab3c;box-shadow:0 0 0 3p
 .badge.reserve{background:#efe8ff;color:#6544a3}.badge.reserve.done{background:#e3f5e8;color:#2f7650}.reservation-box{margin-top:10px;padding:10px;border-radius:13px;background:#faf8f3;font-size:12px;line-height:1.6}.reservation-box strong{display:block;margin-bottom:2px}
 .actions{display:flex;gap:2px}.mini-btn{border:0;background:transparent;padding:5px;color:var(--muted)}
 .empty{text-align:center;padding:38px 18px;border:1px dashed #d8cfc1;border-radius:20px;color:var(--muted)}
+
+/* =========================================================
+   5. 다이얼로그 · 관리 폼
+   ========================================================= */
+
 dialog{width:min(520px,calc(100% - 22px));max-height:90vh;overflow:auto;border:0;border-radius:22px;padding:0;box-shadow:0 24px 80px rgba(0,0,0,.25)}dialog::backdrop{background:rgba(35,30,25,.48);backdrop-filter:blur(3px)}dialog form{padding:20px}
 .dialog-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.dialog-head h2{margin:0}
 .inline-form{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:14px}.inline-form input{margin:0}
@@ -43,6 +80,11 @@ dialog{width:min(520px,calc(100% - 22px));max-height:90vh;overflow:auto;border:0
 .participant-section{margin:8px 0 18px}
 .section-label{display:grid;gap:4px;margin-bottom:10px}
 .section-label span{font-size:12px;color:var(--muted)}
+
+
+/* =========================================================
+   6. 메인 탭 · 일정 입력 · 첨부 이미지
+   ========================================================= */
 
 .main-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0 10px;padding:5px;background:#eee8dd;border-radius:17px}
 .main-tab{border:0;border-radius:13px;padding:12px 14px;background:transparent;color:var(--muted);font-weight:900}
@@ -87,6 +129,11 @@ dialog{width:min(520px,calc(100% - 22px));max-height:90vh;overflow:auto;border:0
     font-size:17px;
   }
 }
+
+/* =========================================================
+   7. 여행 요약 정보
+   ========================================================= */
+
 .trip-summary{display:block}
 .trip-summary-head{
   display:flex;
@@ -153,7 +200,9 @@ dialog{width:min(520px,calc(100% - 22px));max-height:90vh;overflow:auto;border:0
   }
 }
 
-/* 모바일 항목 추가/수정 폼 오류 수정 */
+/* =========================================================
+   8. 모바일 다이얼로그 · 입력 폼 보정
+   ========================================================= */
 dialog{
   width:min(560px, calc(100vw - 20px));
   max-width:100%;
@@ -273,7 +322,9 @@ dialog textarea{
   }
 }
 
-/* iPhone Safari 날짜 입력칸 가로 넘침 확실히 수정 */
+/* =========================================================
+   9. iPhone Safari 날짜 입력 보정
+   ========================================================= */
 @media (max-width: 700px) {
   .trip-summary {
     width: 100%;
@@ -328,6 +379,11 @@ dialog textarea{
     margin: 0;
   }
 }
+
+
+/* =========================================================
+   10. 지도 링크 · 날짜별 일정 묶음
+   ========================================================= */
 
 .map-link{
   display:inline-flex;
@@ -411,23 +467,137 @@ dialog textarea{
   margin-bottom: 10px;
 }
 
+/* =========================================================
+   11. 일정 카드 수정·삭제 버튼
+   ========================================================= */
 
-/* 여행 기록 영역 */
+.item-card{
+  position:relative;
+}
+
+.item-card > .actions{
+  position:absolute;
+  top:14px;
+  right:14px;
+  display:flex;
+  align-items:center;
+  gap:4px;
+  margin:0;
+  z-index:3;
+}
+
+/* 우측 수정·삭제 버튼과 본문이 겹치지 않도록 여백 확보 */
+.item-card > .item-main{
+  padding-right:64px;
+}
+
+
+/* =========================================================
+   12. 일정별 기록
+   ========================================================= */
+
+/* 일정 카드 안의 기록 영역
+   item-main 안에 있지만 체크박스와 우측 버튼 여백까지 확장 */
 .item-log-box{
-  width:100%;
-  margin-top:12px;
+  width:calc(100% + 105px);
+  max-width:none;
+
+  /* 체크박스 29px + 카드 간격 12px만큼 왼쪽으로 확장 */
+  margin-left:-41px;
+
+  /* 위쪽 간격 */
+  margin-top:14px;
+
   border:0;
   border-radius:0;
   background:transparent;
   overflow:visible;
 }
 
+/* 입력창과 버튼을 세로로 배치 */
 .item-log-editor{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
   width:100%;
+  max-width:none;
   padding:0;
 }
 
-/* 날짜별 자유 기록 토글 */
+/* 일정별 기록 입력창 */
+.item-log-editor textarea{
+  display:block;
+  width:100%;
+  max-width:none;
+  min-width:0;
+  min-height:180px;
+  margin:0;
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-sizing:border-box;
+  resize:vertical;
+  background:#fff;
+  color:var(--text);
+  font:inherit;
+  line-height:1.6;
+  text-align:left;
+}
+
+/* 기록 저장·취소 버튼 줄 */
+.log-button-row{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  margin-top:10px;
+}
+
+.save-log-btn{
+  padding:9px 14px;
+  border:0;
+  border-radius:10px;
+  background:var(--accent);
+  font-weight:700;
+  cursor:pointer;
+}
+
+.cancel-log-btn{
+  padding:8px 13px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#fff;
+  color:var(--text);
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* 저장된 일정 기록 */
+.item-log-box .saved-log-content{
+  display:block;
+  width:100%;
+  max-width:none;
+  min-height:72px;
+  margin:0;
+  padding:14px 16px;
+  border:0;
+  border-radius:14px;
+  box-sizing:border-box;
+  background:#f7f5f1;
+  color:var(--text);
+  line-height:1.5;
+  text-align:left;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+
+/* =========================================================
+   13. 날짜별 자유 기록
+   ========================================================= */
+
 .day-log-box{
   width:auto;
   margin:18px 8px 4px;
@@ -451,15 +621,17 @@ dialog textarea{
   background:#fff;
 }
 
-.item-log-editor textarea,
 .day-log-editor textarea{
   display:block;
   width:100%;
-  min-height:130px;
+  max-width:none;
+  min-width:0;
+  min-height:190px;
   margin:0;
   padding:12px 14px;
   border:1px solid var(--line);
   border-radius:12px;
+  box-sizing:border-box;
   resize:vertical;
   background:#fff;
   color:var(--text);
@@ -468,113 +640,28 @@ dialog textarea{
   text-align:left;
 }
 
-.day-log-editor textarea{
-  min-height:190px;
-}
-
-/* 저장된 기록: 얇은 메모 박스 + 왼쪽 정렬 */
-.saved-log-content{
-  display:block !important;
+/* 날짜별 저장 기록은 흰색 카드로 표시 */
+.day-log-box .saved-log-content{
+  display:block;
   width:100%;
   min-height:0;
   margin:0;
   padding:12px 14px;
-  border:0;
+  border:1px solid var(--line);
   border-radius:14px;
-  background:#f7f5f1;
+  background:#fff;
   color:var(--text);
   line-height:1.5;
-  text-align:left !important;
+  text-align:left;
   white-space:pre-wrap;
   word-break:break-word;
 }
 
-/* 그날의 자유 기록은 흰색 카드로 표시 */
-.day-log-box .saved-log-content{
-  border:1px solid var(--line);
-  background:#fff;
-}
 
-.save-log-btn{
-  display:block;
-  margin:10px 0 0 auto;
-  padding:9px 14px;
-  border:0;
-  border-radius:10px;
-  background:var(--accent);
-  font-weight:700;
-  cursor:pointer;
-}
+/* =========================================================
+   14. 저장된 기록 수정·삭제 버튼
+   ========================================================= */
 
-.saved-log-actions,
-.log-button-row{
-  display:flex;
-  justify-content:flex-end;
-  gap:8px;
-  margin-top:10px;
-}
-
-.cancel-log-btn,
-.mini-log-btn{
-  padding:8px 13px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  background:#fff;
-  color:var(--text);
-  font:inherit;
-  font-weight:700;
-  cursor:pointer;
-}
-
-.mini-log-btn.danger{
-  color:#b42318;
-  background:#fff5f5;
-  border-color:#ffc9c9;
-}
-
-@media(max-width:600px){
-  .day-log-box{
-    margin:14px 6px 2px;
-  }
-
-  .day-log-box > summary{
-    padding:12px 14px;
-  }
-
-  .day-log-editor{
-    padding:0 12px 12px;
-  }
-
-  .item-log-editor textarea{
-    min-height:120px;
-  }
-
-  .day-log-editor textarea{
-    min-height:160px;
-  }
-}
-
-/* 일정 카드 수정/삭제 키 */
-.item-card{
-  position:relative;
-}
-
-.item-card > .actions{
-  position:absolute;
-  top:14px;
-  right:14px;
-  display:flex;
-  align-items:center;
-  gap:4px;
-  margin:0;
-  z-index:3;
-}
-
-.item-card > .item-main{
-  padding-right:64px;
-}
-
-/* 기록 수정/삭제 키 */
 .saved-log-actions{
   display:flex;
   justify-content:flex-end;
@@ -589,8 +676,10 @@ dialog textarea{
   border-radius:10px;
   background:#fff;
   color:var(--text);
+  font:inherit;
   font-size:13px;
   font-weight:800;
+  cursor:pointer;
 }
 
 .mini-log-btn.danger{
@@ -599,58 +688,10 @@ dialog textarea{
   background:#fff5f5;
 }
 
-@media(max-width:600px){
-  .item-card > .actions{
-    top:12px;
-    right:10px;
-  }
 
-  .item-card > .item-main{
-    padding-right:58px;
-  }
-
-  .mini-log-btn{
-    padding:6px 9px;
-    font-size:12px;
-  }
-}
-
-/* 일정별 기록 입력창 넓게 */
-.item-log-box{
-  width:100%;
-  margin-top:14px;
-}
-
-.item-log-editor{
-  width:100%;
-  padding:0;
-}
-
-.item-log-editor textarea{
-  width:100%;
-  min-height:180px;
-  padding:16px;
-  border-radius:14px;
-}
-
-@media(max-width:600px){
-  .item-log-box{
-    margin-top:12px;
-  }
-
-  .item-log-editor textarea{
-    min-height:150px;
-    padding:14px;
-  }
-}
-
-.item-log-box .saved-log-content{
-  width:100%;
-  padding:14px 16px;
-  min-height:72px;
-}
-
-## 담당자 선택 체크박스 스타일
+/* =========================================================
+   15. 담당자 선택 체크박스
+   ========================================================= */
 
 .owner-checkbox-list{
   display:flex;
@@ -663,15 +704,12 @@ dialog textarea{
   display:inline-flex;
   align-items:center;
   gap:8px;
-
   width:auto;
   min-width:max-content;
-
   padding:10px 14px;
   border:1px solid var(--line);
   border-radius:999px;
   background:#fff;
-
   white-space:nowrap;
   cursor:pointer;
 }
@@ -687,4 +725,66 @@ dialog textarea{
   display:inline-block;
   white-space:nowrap;
   line-height:1;
+}
+
+
+/* =========================================================
+   16. 모바일
+   ========================================================= */
+
+@media(max-width:600px){
+  /* 일정 카드 우측 버튼 */
+  .item-card > .actions{
+    top:12px;
+    right:10px;
+  }
+
+  .item-card > .item-main{
+    padding-right:58px;
+  }
+
+/* 모바일 일정 기록칸
+   체크박스 영역과 수정·삭제 버튼 여백까지 카드 전체로 확장 */
+.item-log-box{
+  width:calc(100% + 99px);
+  margin-left:-41px;
+  margin-top:12px;
+}
+
+  .item-log-editor textarea{
+    min-height:150px;
+    padding:14px;
+  }
+
+  .log-button-row{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .log-button-row button{
+    width:100%;
+  }
+
+  /* 날짜별 자유 기록 */
+  .day-log-box{
+    margin:14px 6px 2px;
+  }
+
+  .day-log-box > summary{
+    padding:12px 14px;
+  }
+
+  .day-log-editor{
+    padding:0 12px 12px;
+  }
+
+  .day-log-editor textarea{
+    min-height:160px;
+  }
+
+  /* 기록 수정·삭제 버튼 */
+  .mini-log-btn{
+    padding:6px 9px;
+    font-size:12px;
+  }
 }

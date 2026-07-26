@@ -232,10 +232,43 @@ function renderItems(){
         ${item.reservation_note?`<div>${esc(item.reservation_note)}</div>`:""}
         ${item.reservation_image_url?`<a class="reservation-image-link" href="${esc(item.reservation_image_url)}" target="_blank" rel="noopener"><img src="${esc(item.reservation_image_url)}" alt="예약 첨부 이미지"></a>`:""}
       </div>`:"";
-    const scheduleInfo=(item.section_type||"plan")==="schedule"?`
-      <div class="schedule-date">${esc(item.schedule_date||"날짜 미정")} ${esc(item.schedule_time||"")}</div>
-      ${item.schedule_place?`<div class="item-note">📍 ${esc(item.schedule_place)}</div>`:""}`:"";
-    return `<article class="item-card ${(item.section_type||"plan")==="schedule"?"schedule-item":""} ${item.done?"done":""}">
+      const mapUrl = item.schedule_place
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        item.schedule_place
+      )}`
+    : "";
+
+      let scheduleInfo = "";
+
+      if ((item.section_type || "plan") === "schedule") {
+        scheduleInfo = `
+          <div class="schedule-date">
+            ${esc(item.schedule_date || "날짜 미정")}
+            ${esc(item.schedule_time || "")}
+          </div>
+
+          ${
+            item.schedule_place
+              ? `
+                <div class="item-note">
+                  📍 ${esc(item.schedule_place)}
+                </div>
+
+                <a
+                  class="map-link"
+                  href="${mapUrl}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  지도에서 보기
+                </a>
+              `
+              : ""
+          }
+        `;
+      }
+      
+      return `<article class="item-card ${(item.section_type||"plan")==="schedule"?"schedule-item":""} ${item.done?"done":""}">
       <button class="check-btn ${item.done?"checked":""}" data-check="${item.id}">${item.done?"✓":""}</button>
       <div class="item-main">
         ${scheduleInfo}

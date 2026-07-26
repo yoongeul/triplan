@@ -328,3 +328,21 @@ dialog textarea{
     margin: 0;
   }
 }
+
+.map-link{
+  display:inline-flex;
+  align-items:center;
+  margin-top:8px;
+  padding:8px 11px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#fff;
+  color:#3d7085;
+  font-size:13px;
+  font-weight:800;
+  text-decoration:none;
+}
+
+.map-link:hover{
+  background:#eef8fc;
+}

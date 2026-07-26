@@ -478,12 +478,16 @@ $("#roomCodeInput").addEventListener("keydown",e=>{if(e.key==="Enter")openRoom()
 $("#addItemBtn").onclick=()=>openItemDialog();
 $("#manageCategoriesBtn").onclick=()=>$("#categoryDialog").showModal();
 $("#openSettingsBtn").onclick=()=>state.trip?$("#settingsDialog").showModal():toast("먼저 여행방에 들어가 주세요.");
-$("#itemSectionInput").onchange=updateItemSectionFields;
+if ($("#itemSectionInput")) {
+  $("#itemSectionInput").onchange = updateItemSectionFields;
+}
 $("#reservationRequiredInput").onchange=updateReservationFields;
 $("#itemForm").onsubmit=saveItem;
 $("#categoryForm").onsubmit=addCategory;
 $("#settingsForm").onsubmit=saveSettings;
-$("#saveTripInfoBtn").onclick=saveTripInfo;
+if ($("#saveTripInfoBtn")) {
+  $("#saveTripInfoBtn").onclick = saveTripInfo;
+}
 $("#addParticipantBtn").onclick=addParticipant;
 function closeDialogFromButton(button){
   const dialog=button.closest("dialog");

@@ -76,11 +76,25 @@ async function reloadCloud(){
   const [{data:cats,error:catErr},{data:participants,error:partErr},{data:items,error:itemErr}]=await Promise.all([
     db.from("trip_categories").select("*").eq("room_code",state.roomCode).order("sort_order"),
     db.from("trip_participants").select("*").eq("room_code",state.roomCode).order("sort_order"),
-    db.from("trip_items").select("*").eq("room_code",state.roomCode).order("created_at")
+    db.from("trip_items")
+      .select("*")
+      .eq("room_code", state.roomCode)
+      .order("schedule_date", {
+        ascending: true,
+        nullsFirst: false
+      })
+      .order("schedule_time", {
+        ascending: true,
+        nullsFirst: false
+      })
+      .order("created_at", {
+        ascending: true
+      })
   ]);
   if(catErr||partErr||itemErr)return toast((catErr||partErr||itemErr).message);
   state.categories=cats||[]; state.participants=participants||[]; state.items=items||[]; render();
 }
+
 function subscribeRoom(){
   if(state.channel)db.removeChannel(state.channel);
   state.channel=db.channel(`trip-${state.roomCode}`)

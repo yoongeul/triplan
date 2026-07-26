@@ -20,6 +20,7 @@ const state = {
 let editingItemLogId = null;
 let editingDayLogDate = null;
 const openScheduleDates = new Set();
+const openDayLogs = new Set();
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -366,6 +367,7 @@ async function saveDayLog(logDate) {
   }
 
   editingDayLogDate = null;
+  openDayLogs.add(logDate);
   renderItems();
   toast("자유 기록을 저장했어요.");
 }
@@ -568,17 +570,12 @@ function renderItems() {
     const itemLog = getItemLog(item.id);
 
     const isEditingItemLog =
-  editingItemLogId === String(item.id);
+      editingItemLogId === String(item.id);
 
     const logArea =
       (item.section_type || "plan") === "schedule"
         ? `
-          <details
-            class="item-log-box"
-            ${isEditingItemLog ? "open" : ""}
-          >
-            <summary>📝 Note </summary>
-
+          <div class="item-log-box">
             <div class="item-log-editor">
               ${
                 !itemLog || isEditingItemLog
@@ -611,9 +608,7 @@ function renderItems() {
                     </div>
                   `
                   : `
-                    <div class="saved-log-content">
-                      ${esc(itemLog.log_content)}
-                    </div>
+                    <div class="saved-log-content">${esc(itemLog.log_content)}</div>
 
                     <div class="saved-log-actions">
                       <button
@@ -633,7 +628,7 @@ function renderItems() {
                   `
               }
             </div>
-          </details>
+          </div>
         `
         : "";
 
@@ -785,11 +780,17 @@ function renderItems() {
                   ? `
                   <details
                     class="day-log-box"
-                    ${editingDayLogDate === dateKey ? "open" : ""}
+                    data-day-log-date="${dateKey}"
+                    ${
+                      editingDayLogDate === dateKey ||
+                      openDayLogs.has(dateKey)
+                        ? "open"
+                        : ""
+                    }
                   >
-                      <summary>🗒️ Today's note </summary>
+                  <summary>🗒️ Today's Notes</summary>
 
-                      <div class="day-log-editor">
+                  <div class="day-log-editor">
                         ${
                           !dayLog || editingDayLogDate === dateKey
                             ? `
@@ -821,9 +822,7 @@ function renderItems() {
                               </div>
                             `
                             : `
-                              <div class="saved-log-content">
-                                ${esc(dayLog.log_content)}
-                              </div>
+                              <div class="saved-log-content">${esc(dayLog.log_content)}</div>
 
                               <div class="saved-log-actions">
                                 <button
@@ -923,6 +922,20 @@ function renderItems() {
       }
     };
   });
+
+  $$("[data-day-log-date]").forEach(group => {
+  group.ontoggle = () => {
+    const logDate = group.dataset.dayLogDate;
+
+    if (!logDate) return;
+
+    if (group.open) {
+      openDayLogs.add(logDate);
+    } else {
+      openDayLogs.delete(logDate);
+    }
+  };
+});
     
 } //renderitems 끝
 

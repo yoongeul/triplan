@@ -411,93 +411,228 @@ dialog textarea{
   margin-bottom: 10px;
 }
 
-.item-log-box,
-.day-log-box {
-  margin-top: 12px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: #fffdf5;
-  overflow: hidden;
+
+/* 여행 기록 영역 */
+.item-log-box{
+  width:100%;
+  margin-top:12px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  overflow:visible;
 }
 
-.item-log-box summary,
-.day-log-box summary {
-  padding: 12px 14px;
-  font-weight: 700;
-  cursor: pointer;
+.item-log-editor{
+  width:100%;
+  padding:0;
 }
 
-.item-log-editor,
-.day-log-editor {
-  padding: 0 12px 12px;
+/* 날짜별 자유 기록 토글 */
+.day-log-box{
+  width:auto;
+  margin:18px 8px 4px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:#fff;
+  overflow:hidden;
+}
+
+.day-log-box > summary{
+  padding:14px 16px;
+  background:#fff;
+  color:var(--text);
+  font-weight:800;
+  cursor:pointer;
+}
+
+.day-log-editor{
+  width:100%;
+  padding:0 14px 14px;
+  background:#fff;
 }
 
 .item-log-editor textarea,
-.day-log-editor textarea {
-  display: block;
-  width: 100%;
-  min-height: 130px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  resize: vertical;
-  font: inherit;
-  line-height: 1.6;
-  background: #fff;
+.day-log-editor textarea{
+  display:block;
+  width:100%;
+  min-height:130px;
+  margin:0;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  resize:vertical;
+  background:#fff;
+  color:var(--text);
+  font:inherit;
+  line-height:1.6;
+  text-align:left;
 }
 
-.day-log-editor textarea {
-  min-height: 190px;
+.day-log-editor textarea{
+  min-height:190px;
 }
 
-.save-log-btn {
-  display: block;
-  margin: 10px 0 0 auto;
-  padding: 9px 14px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--accent);
-  font-weight: 700;
-  cursor: pointer;
+/* 저장된 기록: 얇은 메모 박스 + 왼쪽 정렬 */
+.saved-log-content{
+  display:block !important;
+  width:100%;
+  min-height:0;
+  margin:0;
+  padding:12px 14px;
+  border:0;
+  border-radius:14px;
+  background:#f7f5f1;
+  color:var(--text);
+  line-height:1.5;
+  text-align:left !important;
+  white-space:pre-wrap;
+  word-break:break-word;
 }
 
-.day-log-box {
-  margin-top: 18px;
-  background: #f7f5ff;
+/* 그날의 자유 기록은 흰색 카드로 표시 */
+.day-log-box .saved-log-content{
+  border:1px solid var(--line);
+  background:#fff;
 }
 
-.saved-log-content {
-  min-height: 80px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #fff;
-  line-height: 1.65;
-  white-space: pre-wrap;
-  word-break: break-word;
+.save-log-btn{
+  display:block;
+  margin:10px 0 0 auto;
+  padding:9px 14px;
+  border:0;
+  border-radius:10px;
+  background:var(--accent);
+  font-weight:700;
+  cursor:pointer;
 }
 
 .saved-log-actions,
-.log-button-row {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 10px;
+.log-button-row{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:10px;
 }
 
 .cancel-log-btn,
-.mini-log-btn {
-  padding: 8px 13px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
+.mini-log-btn{
+  padding:8px 13px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#fff;
+  color:var(--text);
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
 }
 
-.mini-log-btn.danger {
-  color: #b42318;
-  background: #fff5f5;
-  border-color: #ffc9c9;
+.mini-log-btn.danger{
+  color:#b42318;
+  background:#fff5f5;
+  border-color:#ffc9c9;
+}
+
+@media(max-width:600px){
+  .day-log-box{
+    margin:14px 6px 2px;
+  }
+
+  .day-log-box > summary{
+    padding:12px 14px;
+  }
+
+  .day-log-editor{
+    padding:0 12px 12px;
+  }
+
+  .item-log-editor textarea{
+    min-height:120px;
+  }
+
+  .day-log-editor textarea{
+    min-height:160px;
+  }
+}
+
+/* 일정 카드 수정/삭제 키 */
+.item-card{
+  position:relative;
+}
+
+.item-card > .actions{
+  position:absolute;
+  top:14px;
+  right:14px;
+  display:flex;
+  align-items:center;
+  gap:4px;
+  margin:0;
+  z-index:3;
+}
+
+.item-card > .item-main{
+  padding-right:64px;
+}
+
+/* 기록 수정/삭제 키 */
+.saved-log-actions{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:6px;
+  margin-top:6px;
+}
+
+.mini-log-btn{
+  padding:7px 11px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#fff;
+  color:var(--text);
+  font-size:13px;
+  font-weight:800;
+}
+
+.mini-log-btn.danger{
+  color:#b42318;
+  border-color:#ffc9c9;
+  background:#fff5f5;
+}
+
+@media(max-width:600px){
+  .item-card > .actions{
+    top:12px;
+    right:10px;
+  }
+
+  .item-card > .item-main{
+    padding-right:58px;
+  }
+
+  .mini-log-btn{
+    padding:6px 9px;
+    font-size:12px;
+  }
+}
+
+/* 일정 기록 전체를 확실히 왼쪽 정렬 */
+.item-log-box,
+.item-log-editor,
+.saved-log-content {
+  width: 100% !important;
+  text-align: left !important;
+}
+
+.item-log-editor {
+  display: block !important;
+}
+
+.saved-log-content {
+  display: block !important;
+  align-self: stretch !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding: 12px 14px !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
 }

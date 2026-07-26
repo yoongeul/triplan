@@ -1,7 +1,6 @@
 const SUPABASE_URL = "https://kgwgyxbkyddlmhezxiwn.supabase.co/";
 const SUPABASE_ANON_KEY = "sb_publishable_CPjg5G9P9_j9omT4LxH7DQ_S-FKlArB";
 
-
 const cloudEnabled = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const db = cloudEnabled ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
@@ -26,7 +25,7 @@ function toast(msg){
   clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove("show"),1700);
 }
 function roomKey(){return `tripChecklist:${state.roomCode}`}
-function defaultTrip(){return {room_code:state.roomCode,name:"우리들의 여행"}}
+function defaultTrip(){return {room_code:state.roomCode,name:"우리들의 여행",destination:"",start_date:null,end_date:null}}
 function defaultCategories(){return ["예약","공동 준비","개인 짐","아이들","먹거리","차량"].map((name,i)=>({id:uid(),room_code:state.roomCode,name,sort_order:i}))}
 function defaultParticipants(){return ["혜정","다연이네","친구네"].map((name,i)=>({id:uid(),room_code:state.roomCode,name,sort_order:i}))}
 function defaultItems(){
@@ -100,6 +99,9 @@ function render(){
   if(!state.trip)return;
   $("#tripTitle").textContent=state.trip.name;
   $("#roomLabel").textContent=`여행 코드 ${state.roomCode}`;
+  $("#tripDestinationInput").value=state.trip.destination||"";
+  $("#tripStartDateInput").value=state.trip.start_date||"";
+  $("#tripEndDateInput").value=state.trip.end_date||"";
   renderMainTabs(); renderCategories(); renderParticipants(); renderItems(); renderSettings();
 }
 function renderMainTabs(){
@@ -431,6 +433,35 @@ async function deleteParticipant(id,name){
   toast("참여자를 삭제했어요.");
 }
 
+
+async function saveTripInfo(){
+  const destination=$("#tripDestinationInput").value.trim();
+  const startDate=$("#tripStartDateInput").value||null;
+  const endDate=$("#tripEndDateInput").value||null;
+
+  if(startDate&&endDate&&endDate<startDate){
+    return toast("도착일은 출발일보다 빠를 수 없어요.");
+  }
+
+  const payload={
+    destination,
+    start_date:startDate,
+    end_date:endDate
+  };
+
+  if(!cloudEnabled){
+    state.trip={...state.trip,...payload};
+    persistLocal();
+    render();
+  }else{
+    const {error}=await db.from("trips").update(payload).eq("room_code",state.roomCode);
+    if(error)return toast(error.message);
+    state.trip={...state.trip,...payload};
+    render();
+  }
+  toast("여행 정보를 저장했어요.");
+}
+
 function renderSettings(){
   $("#tripNameInput").value=state.trip.name||"";
 }
@@ -452,6 +483,7 @@ $("#reservationRequiredInput").onchange=updateReservationFields;
 $("#itemForm").onsubmit=saveItem;
 $("#categoryForm").onsubmit=addCategory;
 $("#settingsForm").onsubmit=saveSettings;
+$("#saveTripInfoBtn").onclick=saveTripInfo;
 $("#addParticipantBtn").onclick=addParticipant;
 function closeDialogFromButton(button){
   const dialog=button.closest("dialog");

@@ -4,16 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#fff8e8" />
-  <title>두 가족 여행 체크리스트</title>
+  <title>✈️여행을 떠나요🏝️</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <header class="topbar">
     <div>
-      <p class="eyebrow">TWO FAMILY TRIP</p>
-      <h1>여행 준비 체크리스트 🧳</h1>
-      <p class="sub">두 가족이 함께 준비하고, 같이 체크해요.</p>
+      <p class="eyebrow">TRIPLAN</p>
+      <h1>우리들의 여행을 한곳에</h1>
+      <p class="sub">함께 준비하고, 같이 체크해요.</p>
     </div>
     <button id="openSettingsBtn" class="icon-btn" aria-label="설정">⚙️</button>
   </header>
@@ -21,7 +21,7 @@
   <main class="container">
     <section id="joinView" class="card join-card">
       <h2>여행방 입장</h2>
-      <p class="muted">두 가족이 같은 여행 코드를 사용하면 동일한 체크리스트를 공유합니다.</p>
+      <p class="muted">같은 여행 코드를 사용하면 동일한 체크리스트를 공유합니다.</p>
       <label>여행 코드
         <input id="roomCodeInput" maxlength="30" placeholder="예: JEJU2026" autocomplete="off" />
       </label>
@@ -30,15 +30,31 @@
     </section>
 
     <section id="appView" hidden>
-      <section class="summary card">
-        <div>
-          <strong id="tripTitle">우리들의 여행</strong>
-          <p id="roomLabel" class="muted"></p>
+      <section class="summary card trip-summary">
+        <div class="trip-summary-head">
+          <div>
+            <strong id="tripTitle">우리들의 여행</strong>
+            <p id="roomLabel" class="muted"></p>
+          </div>
+          <div class="progress-info">
+            <strong id="progressText">0 / 0</strong>
+            <span>완료</span>
+          </div>
         </div>
-        <div class="progress-info">
-          <strong id="progressText">0 / 0</strong>
-          <span>완료</span>
+
+        <div class="trip-info-grid">
+          <label>여행지
+            <input id="tripDestinationInput" placeholder="예: 일본 오사카 / 제주도" />
+          </label>
+          <label>출발일
+            <input id="tripStartDateInput" type="date" />
+          </label>
+          <label>도착일
+            <input id="tripEndDateInput" type="date" />
+          </label>
+          <button id="saveTripInfoBtn" type="button" class="trip-info-save">여행 정보 저장</button>
         </div>
+
         <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
       </section>
 

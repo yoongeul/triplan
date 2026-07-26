@@ -152,3 +152,171 @@ dialog{width:min(520px,calc(100% - 22px));max-height:90vh;overflow:auto;border:0
     width:100%;
   }
 }
+
+/* 모바일 항목 추가/수정 폼 오류 수정 */
+dialog{
+  width:min(560px, calc(100vw - 20px));
+  max-width:100%;
+  max-height:92vh;
+  overflow:hidden;
+}
+
+dialog form{
+  max-height:92vh;
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  padding:20px;
+}
+
+dialog form,
+dialog form *,
+.trip-info-grid,
+.trip-info-grid *{
+  min-width:0;
+}
+
+dialog input,
+dialog select,
+dialog textarea{
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+
+#itemForm .two-col,
+#settingsForm .two-col{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+}
+
+.schedule-fields,
+.reservation-fields{
+  width:100%;
+  max-width:100%;
+  overflow:hidden;
+}
+
+.schedule-fields input[type="date"],
+.schedule-fields input[type="time"],
+.trip-info-grid input[type="date"]{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  appearance:none;
+  -webkit-appearance:none;
+}
+
+#itemForm select{
+  min-height:52px;
+  padding:13px 44px 13px 16px;
+  font-size:16px;
+  font-weight:800;
+  line-height:1.3;
+  border-radius:14px;
+}
+
+#itemForm input,
+#itemForm textarea{
+  font-size:16px;
+}
+
+.dialog-head{
+  position:sticky;
+  top:-20px;
+  z-index:5;
+  background:#fff;
+  padding-top:4px;
+  padding-bottom:12px;
+}
+
+@media(max-width:700px){
+  dialog{
+    width:calc(100vw - 16px);
+    max-height:94vh;
+  }
+
+  dialog form{
+    padding:18px;
+    max-height:94vh;
+  }
+
+  #itemForm .two-col,
+  #settingsForm .two-col,
+  .schedule-fields .two-col,
+  .reservation-fields .two-col{
+    grid-template-columns:1fr;
+    gap:0;
+  }
+
+  .schedule-fields,
+  .reservation-fields{
+    padding:14px;
+  }
+
+  #itemForm select{
+    min-height:54px;
+    font-size:17px;
+  }
+
+  .trip-info-grid{
+    grid-template-columns:1fr;
+  }
+
+  .trip-info-grid > *,
+  .trip-info-grid label,
+  .trip-info-save{
+    grid-column:1 / -1;
+    width:100%;
+  }
+}
+
+/* 모바일 여행 정보 입력칸 넘침 최종 수정 */
+.trip-summary,
+.trip-info-grid,
+.trip-info-grid label{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow:hidden;
+}
+
+.trip-info-grid input,
+.trip-info-grid input[type="date"]{
+  display:block;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  box-sizing:border-box;
+  -webkit-appearance:none;
+  appearance:none;
+}
+
+.trip-info-grid input[type="date"]::-webkit-date-and-time-value{
+  text-align:left;
+  min-width:0;
+}
+
+@media(max-width:700px){
+  .trip-info-grid{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  .trip-info-grid label,
+  .trip-info-save{
+    display:block;
+    width:100% !important;
+    max-width:100% !important;
+    flex:0 0 auto;
+  }
+
+  .trip-info-grid input[type="date"]{
+    height:54px;
+    padding:12px 14px;
+    font-size:16px;
+  }
+}

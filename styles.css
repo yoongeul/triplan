@@ -273,50 +273,58 @@ dialog textarea{
   }
 }
 
-/* 모바일 여행 정보 입력칸 넘침 최종 수정 */
-.trip-summary,
-.trip-info-grid,
-.trip-info-grid label{
-  width:100%;
-  max-width:100%;
-  min-width:0;
-  overflow:hidden;
-}
-
-.trip-info-grid input,
-.trip-info-grid input[type="date"]{
-  display:block;
-  width:100% !important;
-  max-width:100% !important;
-  min-width:0 !important;
-  box-sizing:border-box;
-  -webkit-appearance:none;
-  appearance:none;
-}
-
-.trip-info-grid input[type="date"]::-webkit-date-and-time-value{
-  text-align:left;
-  min-width:0;
-}
-
-@media(max-width:700px){
-  .trip-info-grid{
-    display:flex;
-    flex-direction:column;
-    gap:14px;
+/* iPhone Safari 날짜 입력칸 가로 넘침 확실히 수정 */
+@media (max-width: 700px) {
+  .trip-summary {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
   }
 
-  .trip-info-grid label,
-  .trip-info-save{
-    display:block;
-    width:100% !important;
-    max-width:100% !important;
-    flex:0 0 auto;
+  .trip-info-grid {
+    display: block;
+    width: 100%;
+    max-width: 100%;
   }
 
-  .trip-info-grid input[type="date"]{
-    height:54px;
-    padding:12px 14px;
-    font-size:16px;
+  .trip-info-grid label {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+
+  .trip-info-grid input,
+  .trip-info-grid input[type="date"] {
+    display: block;
+    inline-size: -webkit-fill-available !important;
+    width: -webkit-fill-available !important;
+    max-width: -webkit-fill-available !important;
+    min-width: 0 !important;
+    min-inline-size: 0 !important;
+
+    height: 54px;
+    margin: 0;
+    padding: 12px 14px;
+
+    box-sizing: border-box !important;
+    -webkit-box-sizing: border-box !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .trip-info-grid input[type="date"]::-webkit-date-and-time-value {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    text-align: left;
+  }
+
+  .trip-info-save {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
   }
 }

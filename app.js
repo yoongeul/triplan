@@ -12,14 +12,47 @@ const state = {
   itemLogs: [],
   dayLogs: [],
   items: [],
-  selectedCategory: "전체",
-  selectedSection: "plan",
+
+  ui: {
+    selectedCategory: "전체",
+    selectedSection: "plan",
+  },
+
   channel: null
 };
 
+const UI_STORAGE_KEY = "tripUIState";
+
+function saveUIState(){
+  localStorage.setItem(
+    UI_STORAGE_KEY,
+    JSON.stringify(state.ui)
+  );
+}
+
+function loadUIState(){
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(UI_STORAGE_KEY) || "{}"
+    );
+
+    state.ui = {
+      ...state.ui,
+      ...saved
+    };
+  } catch (error) {
+    console.warn("UI 상태 불러오기 실패:", error);
+    localStorage.removeItem(UI_STORAGE_KEY);
+  }
+}
+
+loadUIState();
+
 let editingItemLogId = null;
 let editingDayLogDate = null;
-const openScheduleDates = new Set();
+const openScheduleDates = new Set(
+  state.ui.openScheduleDates || []
+);
 const openDayLogs = new Set();
 
 const $ = s => document.querySelector(s);
@@ -164,11 +197,16 @@ function render(){
 }
 
 function renderMainTabs(){
-  $$(".main-tab").forEach(btn=>{
-    btn.classList.toggle("active",btn.dataset.section===state.selectedSection);
-    btn.onclick=()=>{
-      state.selectedSection=btn.dataset.section;
-      state.selectedCategory="전체";
+  $$(".main-tab").forEach(btn => {
+    btn.classList.toggle(
+      "active",
+      btn.dataset.section === state.ui.selectedSection
+    );
+
+    btn.onclick = () => {
+      state.ui.selectedSection = btn.dataset.section;
+      state.ui.selectedCategory = "전체";
+      saveUIState();
       render();
     };
   });
@@ -177,7 +215,7 @@ function renderMainTabs(){
 function renderCategories() {
   const sectionCategories = state.categories.filter(
     category =>
-      (category.section_type || "plan") === state.selectedSection
+      (category.section_type || "plan") === state.ui.selectedSection
   );
 
   const names = [
@@ -185,15 +223,15 @@ function renderCategories() {
     ...sectionCategories.map(category => category.name)
   ];
 
-  if (!names.includes(state.selectedCategory)) {
-    state.selectedCategory = "전체";
+  if (!names.includes(state.ui.selectedCategory)) {
+    state.ui.selectedCategory = "전체";
   }
 
   $("#categoryTabs").innerHTML = names
     .map(name => `
       <button
         class="category-tab ${
-          name === state.selectedCategory ? "active" : ""
+          name === state.ui.selectedCategory ? "active" : ""
         }"
         data-category="${esc(name)}"
       >
@@ -206,10 +244,10 @@ function renderCategories() {
     .querySelectorAll("button")
     .forEach(button => {
       button.onclick = () => {
-        state.selectedCategory = button.dataset.category;
+        state.ui.selectedCategory = button.dataset.category;
+        saveUIState();
         render();
       };
-    });
 
   $("#itemCategoryInput").innerHTML = sectionCategories
     .map(category => `
@@ -271,6 +309,7 @@ function renderCategories() {
           button.dataset.name
         );
     });
+  });
 }
 
 function getItemLog(itemId) {
@@ -441,24 +480,24 @@ async function deleteDayLog(logId) {
 
 function renderItems() {
   const sectionItems = state.items.filter(
-    item => (item.section_type || "plan") === state.selectedSection
+    item => (item.section_type || "plan") === state.ui.selectedSection
   );
 
   const shown = sectionItems.filter(
     item =>
-      state.selectedCategory === "전체" ||
-      item.category_name === state.selectedCategory
+      state.ui.selectedCategory === "전체" ||
+      item.category_name === state.ui.selectedCategory
   );
 
   const baseTitle =
-    state.selectedSection === "plan"
+    state.ui.selectedSection === "plan"
       ? "여행 계획"
       : "여행 일정";
 
   $("#listTitle").textContent =
-    state.selectedCategory === "전체"
+    state.ui.selectedCategory === "전체"
       ? baseTitle
-      : `${baseTitle} · ${state.selectedCategory}`;
+      : `${baseTitle} · ${state.ui.selectedCategory}`;
 
   const done = sectionItems.filter(item => item.done).length;
   const total = sectionItems.length;
@@ -730,7 +769,7 @@ function renderItems() {
         새 항목을 추가해 보세요.
       </div>
     `;
-  } else if (state.selectedSection === "schedule") {
+  } else if (state.ui.selectedSection === "schedule") {
     const grouped = {};
 
     shown.forEach(item => {
@@ -919,6 +958,8 @@ function renderItems() {
       } else {
         openScheduleDates.delete(dateKey);
       }
+    state.ui.openScheduleDates = [...openScheduleDates];
+    saveUIState();
     };
   });
 
@@ -980,7 +1021,7 @@ function openItemDialog(id = "") {
     item ? "항목 수정" : "항목 추가";
 
   $("#itemSectionInput").value =
-    item?.section_type || state.selectedSection;
+    item?.section_type || state.ui.selectedSection;
 
   // 기존 담당자 문자열을 배열로 변환
   // 예: "다연,윤하" → ["다연", "윤하"]
@@ -1290,7 +1331,7 @@ async function addCategory(event) {
 
   const sectionCategories = state.categories.filter(
     category =>
-      (category.section_type || "plan") === state.selectedSection
+      (category.section_type || "plan") === state.ui.selectedSection
   );
 
   const duplicated = sectionCategories.some(
@@ -1305,7 +1346,7 @@ async function addCategory(event) {
     room_code: state.roomCode,
     name,
     sort_order: sectionCategories.length,
-    section_type: state.selectedSection
+    section_type: state.ui.selectedSection
   };
 
   if (!cloudEnabled) {
@@ -1357,7 +1398,7 @@ async function renameCategory(id,oldName,newValue){
       const itemSection = item.section_type || "plan";
 
       if (
-        itemSection === state.selectedSection &&
+        itemSection === state.ui.selectedSection &&
         item.category_name === oldName
       ) {
         item.category_name = newName;
@@ -1371,12 +1412,12 @@ async function renameCategory(id,oldName,newValue){
         category_name: newName
       })
       .eq("room_code", state.roomCode)
-      .eq("section_type", state.selectedSection)
+      .eq("section_type", state.ui.selectedSection)
       .eq("category_name", oldName);
     if(itemError)return toast(itemError.message);
     const {error:categoryError}=await db.from("trip_categories").update({name:newName}).eq("id",id);
     if(categoryError)return toast(categoryError.message);
-    if(state.selectedCategory===oldName)state.selectedCategory=newName;
+    if(state.ui.selectedCategory===oldName)state.ui.selectedCategory=newName;
     await reloadCloud();
   }
   toast("카테고리 이름을 수정했어요.");

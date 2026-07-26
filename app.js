@@ -9,11 +9,17 @@ const state = {
   trip: null,
   categories: [],
   participants: [],
+  itemLogs: [],
+  dayLogs: [],
   items: [],
   selectedCategory: "전체",
   selectedSection: "plan",
   channel: null
 };
+
+let editingItemLogId = null;
+let editingDayLogDate = null;
+const openScheduleDates = new Set();
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -24,6 +30,7 @@ function toast(msg){
   const el=$("#toast"); el.textContent=msg; el.classList.add("show");
   clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove("show"),1700);
 }
+
 function roomKey(){return `tripChecklist:${state.roomCode}`}
 function defaultTrip(){return {room_code:state.roomCode,name:"우리들의 여행",destination:"",start_date:null,end_date:null}}
 function defaultCategories(){return ["예약","공동 준비","개인 짐","아이들","먹거리","차량"].map((name,i)=>({id:uid(),room_code:state.roomCode,name,sort_order:i}))}
@@ -73,26 +80,59 @@ async function openRoom(){
 }
 
 async function reloadCloud(){
-  const [{data:cats,error:catErr},{data:participants,error:partErr},{data:items,error:itemErr}]=await Promise.all([
-    db.from("trip_categories").select("*").eq("room_code",state.roomCode).order("sort_order"),
-    db.from("trip_participants").select("*").eq("room_code",state.roomCode).order("sort_order"),
-    db.from("trip_items")
+  const [
+    { data: cats, error: catErr },
+    { data: participants, error: partErr },
+    { data: items, error: itemErr },
+    { data: itemLogs, error: itemLogErr },
+    { data: dayLogs, error: dayLogErr }
+  ] = await Promise.all([
+    db
+      .from("trip_categories")
       .select("*")
       .eq("room_code", state.roomCode)
-      .order("schedule_date", {
-        ascending: true,
-        nullsFirst: false
-      })
-      .order("schedule_time", {
-        ascending: true,
-        nullsFirst: false
-      })
-      .order("created_at", {
-        ascending: true
-      })
+      .order("sort_order"),
+
+    db
+      .from("trip_participants")
+      .select("*")
+      .eq("room_code", state.roomCode)
+      .order("sort_order"),
+
+    db
+      .from("trip_items")
+      .select("*")
+      .eq("room_code", state.roomCode)
+      .order("created_at"),
+
+    db
+      .from("trip_item_logs")
+      .select("*")
+      .eq("room_code", state.roomCode),
+
+    db
+      .from("trip_day_logs")
+      .select("*")
+      .eq("room_code", state.roomCode)
+      .order("log_date")
   ]);
-  if(catErr||partErr||itemErr)return toast((catErr||partErr||itemErr).message);
-  state.categories=cats||[]; state.participants=participants||[]; state.items=items||[]; render();
+
+  const error =
+    catErr ||
+    partErr ||
+    itemErr ||
+    itemLogErr ||
+    dayLogErr;
+
+  if (error) return toast(error.message);
+
+  state.categories = cats || [];
+  state.participants = participants || [];
+  state.items = items || [];
+  state.itemLogs = itemLogs || [];
+  state.dayLogs = dayLogs || [];
+
+  render();
 }
 
 function subscribeRoom(){
@@ -103,12 +143,15 @@ function subscribeRoom(){
     .on("postgres_changes",{event:"*",schema:"public",table:"trip_participants",filter:`room_code=eq.${state.roomCode}`},reloadCloud)
     .subscribe();
 }
+
 function showApp(){
   $("#joinView").hidden=true; $("#appView").hidden=false; render();
 }
+
 function ownerName(owner){
   return owner || "";
 }
+
 function render(){
   if(!state.trip)return;
   $("#tripTitle").textContent=state.trip.name;
@@ -118,6 +161,7 @@ function render(){
   $("#tripEndDateInput").value=state.trip.end_date||"";
   renderMainTabs(); renderCategories(); renderParticipants(); renderItems(); renderSettings();
 }
+
 function renderMainTabs(){
   $$(".main-tab").forEach(btn=>{
     btn.classList.toggle("active",btn.dataset.section===state.selectedSection);
@@ -128,6 +172,7 @@ function renderMainTabs(){
     };
   });
 }
+
 function renderCategories() {
   const sectionCategories = state.categories.filter(
     category =>
@@ -227,25 +272,257 @@ function renderCategories() {
     });
 }
 
-function renderItems(){
-  const sectionItems=state.items.filter(i=>(i.section_type||"plan")===state.selectedSection);
-  const shown=sectionItems.filter(i=>state.selectedCategory==="전체"||i.category_name===state.selectedCategory);
-  const baseTitle=state.selectedSection==="plan"?"여행 계획":"여행 일정";
-  $("#listTitle").textContent=state.selectedCategory==="전체"?baseTitle:`${baseTitle} · ${state.selectedCategory}`;
-  const done=sectionItems.filter(i=>i.done).length,total=sectionItems.length;
-  $("#progressText").textContent=`${done} / ${total}`;
-  $("#progressBar").style.width=`${total?Math.round(done/total*100):0}%`;
+function getItemLog(itemId) {
+  return state.itemLogs.find(log => String(log.item_id) === String(itemId));
+}
 
-  $("#checklist").innerHTML=shown.length?shown.map(item=>{
-    const reservation=item.reservation_required?`
-      <div class="reservation-box">
-        <strong>${item.reservation_done?"예약 완료":"예약 필요"}</strong>
-        ${item.reservation_date||item.reservation_time?`<div>${esc(item.reservation_date||"")} ${esc(item.reservation_time||"")}</div>`:""}
-        ${item.reservation_place?`<div>예약처: ${esc(item.reservation_place)}</div>`:""}
-        ${item.reservation_number?`<div>예약번호: ${esc(item.reservation_number)}</div>`:""}
-        ${item.reservation_note?`<div>${esc(item.reservation_note)}</div>`:""}
-        ${item.reservation_image_url?`<a class="reservation-image-link" href="${esc(item.reservation_image_url)}" target="_blank" rel="noopener"><img src="${esc(item.reservation_image_url)}" alt="예약 첨부 이미지"></a>`:""}
-      </div>`:"";
+function getDayLog(logDate) {
+  return state.dayLogs.find(log => log.log_date === logDate);
+}
+
+async function saveItemLog(itemId) {
+  const textarea = document.querySelector(
+    `[data-item-log-input="${itemId}"]`
+  );
+
+  if (!textarea) return;
+
+  const logContent = textarea.value.trim();
+
+  if (!logContent) {
+    return toast("기록 내용을 입력해 주세요.");
+  }
+
+  const { data, error } = await db
+    .from("trip_item_logs")
+    .upsert(
+      {
+        room_code: state.roomCode,
+        item_id: itemId,
+        log_content: logContent
+      },
+      {
+        onConflict: "room_code,item_id"
+      }
+    )
+    .select()
+    .single();
+
+  if (error) return toast(error.message);
+
+  const index = state.itemLogs.findIndex(
+    log => String(log.item_id) === String(itemId)
+  );
+
+  if (index >= 0) {
+    state.itemLogs[index] = data;
+  } else {
+    state.itemLogs.push(data);
+  }
+
+  editingItemLogId = null;
+  renderItems();
+  toast("일정 기록을 저장했어요.");
+}
+
+async function saveDayLog(logDate) {
+  const textarea = document.querySelector(
+    `[data-day-log-input="${logDate}"]`
+  );
+
+  if (!textarea) return;
+
+  const logContent = textarea.value.trim();
+
+  if (!logContent) {
+    return toast("자유 기록 내용을 입력해 주세요.");
+  }
+
+  const { data, error } = await db
+    .from("trip_day_logs")
+    .upsert(
+      {
+        room_code: state.roomCode,
+        log_date: logDate,
+        log_content: logContent
+      },
+      {
+        onConflict: "room_code,log_date"
+      }
+    )
+    .select()
+    .single();
+
+  if (error) return toast(error.message);
+
+  const index = state.dayLogs.findIndex(
+    log => log.log_date === logDate
+  );
+
+  if (index >= 0) {
+    state.dayLogs[index] = data;
+  } else {
+    state.dayLogs.push(data);
+  }
+
+  editingDayLogDate = null;
+  renderItems();
+  toast("자유 기록을 저장했어요.");
+}
+
+function editItemLog(itemId) {
+  const item = state.items.find(
+    item => String(item.id) === String(itemId)
+  );
+
+  if (item?.schedule_date) {
+    openScheduleDates.add(item.schedule_date);
+  }
+
+  editingItemLogId = String(itemId);
+  renderItems();
+}
+
+function cancelItemLogEdit() {
+  editingItemLogId = null;
+  renderItems();
+}
+
+function editDayLog(logDate) {
+  openScheduleDates.add(logDate);
+  editingDayLogDate = logDate;
+  renderItems();
+}
+
+function cancelDayLogEdit() {
+  editingDayLogDate = null;
+  renderItems();
+}
+
+async function deleteItemLog(logId) {
+  if (!confirm("이 일정의 기록을 삭제할까요?")) return;
+
+  const { error } = await db
+    .from("trip_item_logs")
+    .delete()
+    .eq("id", logId);
+
+  if (error) return toast(error.message);
+
+  state.itemLogs = state.itemLogs.filter(
+    log => String(log.id) !== String(logId)
+  );
+
+  editingItemLogId = null;
+  renderItems();
+  toast("일정 기록을 삭제했어요.");
+}
+
+async function deleteDayLog(logId) {
+  if (!confirm("그날의 자유 기록을 삭제할까요?")) return;
+
+  const { error } = await db
+    .from("trip_day_logs")
+    .delete()
+    .eq("id", logId);
+
+  if (error) return toast(error.message);
+
+  state.dayLogs = state.dayLogs.filter(
+    log => String(log.id) !== String(logId)
+  );
+
+  editingDayLogDate = null;
+  renderItems();
+  toast("자유 기록을 삭제했어요.");
+}
+
+function renderItems() {
+  const sectionItems = state.items.filter(
+    item => (item.section_type || "plan") === state.selectedSection
+  );
+
+  const shown = sectionItems.filter(
+    item =>
+      state.selectedCategory === "전체" ||
+      item.category_name === state.selectedCategory
+  );
+
+  const baseTitle =
+    state.selectedSection === "plan"
+      ? "여행 계획"
+      : "여행 일정";
+
+  $("#listTitle").textContent =
+    state.selectedCategory === "전체"
+      ? baseTitle
+      : `${baseTitle} · ${state.selectedCategory}`;
+
+  const done = sectionItems.filter(item => item.done).length;
+  const total = sectionItems.length;
+
+  $("#progressText").textContent = `${done} / ${total}`;
+  $("#progressBar").style.width =
+    `${total ? Math.round(done / total * 100) : 0}%`;
+
+  function renderItemCard(item) {
+    const reservation = item.reservation_required
+      ? `
+        <div class="reservation-box">
+          <strong>
+            ${item.reservation_done ? "예약 완료" : "예약 필요"}
+          </strong>
+
+          ${
+            item.reservation_date || item.reservation_time
+              ? `
+                <div>
+                  ${esc(item.reservation_date || "")}
+                  ${esc(item.reservation_time || "")}
+                </div>
+              `
+              : ""
+          }
+
+          ${
+            item.reservation_place
+              ? `<div>예약처: ${esc(item.reservation_place)}</div>`
+              : ""
+          }
+
+          ${
+            item.reservation_number
+              ? `<div>예약번호: ${esc(item.reservation_number)}</div>`
+              : ""
+          }
+
+          ${
+            item.reservation_note
+              ? `<div>${esc(item.reservation_note)}</div>`
+              : ""
+          }
+
+          ${
+            item.reservation_image_url
+              ? `
+                <a
+                  class="reservation-image-link"
+                  href="${esc(item.reservation_image_url)}"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <img
+                    src="${esc(item.reservation_image_url)}"
+                    alt="예약 첨부 이미지"
+                  >
+                </a>
+              `
+              : ""
+          }
+        </div>
+      `
+      : "";
+
     const mapUrl = item.schedule_place
       ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
           item.schedule_place
@@ -287,35 +564,368 @@ function renderItems(){
         }
       `;
     }
-      return `<article class="item-card ${(item.section_type||"plan")==="schedule"?"schedule-item":""} ${item.done?"done":""}">
-      <button class="check-btn ${item.done?"checked":""}" data-check="${item.id}">${item.done?"✓":""}</button>
-      <div class="item-main">
-        ${scheduleInfo}
 
-        ${
-          (item.section_type || "plan") !== "schedule"
-            ? `<div class="item-title">${esc(item.title)}</div>`
-            : ""
-        }        
-        ${item.note?`<p class="item-note">${esc(item.note)}</p>`:""}
-        <div class="meta">
-          <span class="badge category">${esc(item.category_name)}</span>
-          ${item.owner?`<span class="badge owner">${esc(ownerName(item.owner))}</span>`:""}
-          ${item.reservation_required?`<span class="badge reserve ${item.reservation_done?"done":""}">${item.reservation_done?"예약 완료":"예약 필요"}</span>`:""}
+    const itemLog = getItemLog(item.id);
+
+    const isEditingItemLog =
+  editingItemLogId === String(item.id);
+
+    const logArea =
+      (item.section_type || "plan") === "schedule"
+        ? `
+          <details
+            class="item-log-box"
+            ${isEditingItemLog ? "open" : ""}
+          >
+            <summary>📝 Note </summary>
+
+            <div class="item-log-editor">
+              ${
+                !itemLog || isEditingItemLog
+                  ? `
+                    <textarea
+                      data-item-log-input="${item.id}"
+                      placeholder="실제로 한 일, 비용, 느낀 점 등을 자유롭게 기록하세요."
+                    >${esc(itemLog?.log_content || "")}</textarea>
+
+                    <div class="log-button-row">
+                      <button
+                        class="save-log-btn"
+                        data-save-item-log="${item.id}"
+                      >
+                        ${itemLog ? "수정 저장" : "기록 저장"}
+                      </button>
+
+                      ${
+                        itemLog
+                          ? `
+                            <button
+                              class="cancel-log-btn"
+                              data-cancel-item-log
+                            >
+                              취소
+                            </button>
+                          `
+                          : ""
+                      }
+                    </div>
+                  `
+                  : `
+                    <div class="saved-log-content">
+                      ${esc(itemLog.log_content)}
+                    </div>
+
+                    <div class="saved-log-actions">
+                      <button
+                        class="mini-log-btn"
+                        data-edit-item-log="${item.id}"
+                      >
+                        수정
+                      </button>
+
+                      <button
+                        class="mini-log-btn danger"
+                        data-delete-item-log="${itemLog.id}"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  `
+              }
+            </div>
+          </details>
+        `
+        : "";
+
+    return `
+      <article
+        class="item-card
+        ${(item.section_type || "plan") === "schedule"
+          ? "schedule-item"
+          : ""}
+        ${item.done ? "done" : ""}"
+      >
+        <button
+          class="check-btn ${item.done ? "checked" : ""}"
+          data-check="${item.id}"
+        >
+          ${item.done ? "✓" : ""}
+        </button>
+
+        <div class="item-main">
+          ${scheduleInfo}
+
+          ${
+            (item.section_type || "plan") !== "schedule"
+              ? `
+                <div class="item-title">
+                  ${esc(item.title)}
+                </div>
+              `
+              : ""
+          }
+
+          ${
+            item.note
+              ? `<p class="item-note">${esc(item.note)}</p>`
+              : ""
+          }
+
+          <div class="meta">
+            <span class="badge category">
+              ${esc(item.category_name)}
+            </span>
+
+            ${
+              item.owner
+                ? `
+                  <span class="badge owner">
+                    ${esc(ownerName(item.owner))}
+                  </span>
+                `
+                : ""
+            }
+
+            ${
+              item.reservation_required
+                ? `
+                  <span
+                    class="badge reserve
+                    ${item.reservation_done ? "done" : ""}"
+                  >
+                    ${
+                      item.reservation_done
+                        ? "예약 완료"
+                        : "예약 필요"
+                    }
+                  </span>
+                `
+                : ""
+            }
+          </div>
+
+          ${reservation}
+          ${logArea}
         </div>
-        ${reservation}
-      </div>
-      <div class="actions">
-        <button class="mini-btn" data-edit="${item.id}" aria-label="수정">✏️</button>
-        <button class="mini-btn" data-delete="${item.id}" aria-label="삭제">🗑️</button>
-      </div>
-    </article>`;
-  }).join(""):`<div class="empty">등록된 항목이 없습니다.<br>새 항목을 추가해 보세요.</div>`;
 
-  $$("[data-check]").forEach(b=>b.onclick=()=>toggleItem(b.dataset.check));
-  $$("[data-edit]").forEach(b=>b.onclick=()=>openItemDialog(b.dataset.edit));
-  $$("[data-delete]").forEach(b=>b.onclick=()=>deleteItem(b.dataset.delete));
-}
+        <div class="actions">
+          <button
+            class="mini-btn"
+            data-edit="${item.id}"
+            aria-label="수정"
+          >
+            ✏️
+          </button>
+
+          <button
+            class="mini-btn"
+            data-delete="${item.id}"
+            aria-label="삭제"
+          >
+            🗑️
+          </button>
+        </div>
+      </article>
+    `;
+  }
+
+  if (!shown.length) {
+    $("#checklist").innerHTML = `
+      <div class="empty">
+        등록된 항목이 없습니다.<br>
+        새 항목을 추가해 보세요.
+      </div>
+    `;
+  } else if (state.selectedSection === "schedule") {
+    const grouped = {};
+
+    shown.forEach(item => {
+      const dateKey = item.schedule_date || "날짜 미정";
+
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+
+      grouped[dateKey].push(item);
+    });
+
+    const dateKeys = Object.keys(grouped).sort((a, b) => {
+      if (a === "날짜 미정") return 1;
+      if (b === "날짜 미정") return -1;
+      return a.localeCompare(b);
+    });
+
+    $("#checklist").innerHTML = dateKeys
+      .map((dateKey, index) => {
+        const dateItems = grouped[dateKey];
+        const dayLog = getDayLog(dateKey);
+
+        return `
+          <details
+            class="schedule-day-group"
+            data-schedule-date="${esc(dateKey)}"
+            ${
+              openScheduleDates.has(dateKey)
+                ? "open"
+                : ""
+            }
+          >
+            <summary class="schedule-day-summary">
+              <span>${esc(dateKey)}</span>
+              <span class="schedule-day-count">
+                일정 ${dateItems.length}개
+              </span>
+            </summary>
+
+            <div class="schedule-day-content">
+              ${dateItems.map(renderItemCard).join("")}
+
+              ${
+                dateKey !== "날짜 미정"
+                  ? `
+                  <details
+                    class="day-log-box"
+                    ${editingDayLogDate === dateKey ? "open" : ""}
+                  >
+                      <summary>🗒️ Today's note </summary>
+
+                      <div class="day-log-editor">
+                        ${
+                          !dayLog || editingDayLogDate === dateKey
+                            ? `
+                              <textarea
+                                data-day-log-input="${dateKey}"
+                                placeholder="예정에 없던 장소, 음식, 비용, 그날 전체 이야기를 자유롭게 기록하세요."
+                              >${esc(dayLog?.log_content || "")}</textarea>
+
+                              <div class="log-button-row">
+                                <button
+                                  class="save-log-btn"
+                                  data-save-day-log="${dateKey}"
+                                >
+                                  ${dayLog ? "수정 저장" : "자유 기록 저장"}
+                                </button>
+
+                                ${
+                                  dayLog
+                                    ? `
+                                      <button
+                                        class="cancel-log-btn"
+                                        data-cancel-day-log
+                                      >
+                                        취소
+                                      </button>
+                                    `
+                                    : ""
+                                }
+                              </div>
+                            `
+                            : `
+                              <div class="saved-log-content">
+                                ${esc(dayLog.log_content)}
+                              </div>
+
+                              <div class="saved-log-actions">
+                                <button
+                                  class="mini-log-btn"
+                                  data-edit-day-log="${dateKey}"
+                                >
+                                  수정
+                                </button>
+
+                                <button
+                                  class="mini-log-btn danger"
+                                  data-delete-day-log="${dayLog.id}"
+                                >
+                                  삭제
+                                </button>
+                              </div>
+                            `
+                        }
+                      </div>
+                    </details>
+                  `
+                  : ""
+              }
+            </div>
+          </details>
+        `;
+      })
+      .join("");
+  } else {
+    $("#checklist").innerHTML =
+      shown.map(renderItemCard).join("");
+  }
+
+  $$("[data-check]").forEach(button => {
+    button.onclick = () =>
+      toggleItem(button.dataset.check);
+  });
+
+  $$("[data-edit]").forEach(button => {
+    button.onclick = () =>
+      openItemDialog(button.dataset.edit);
+  });
+
+  $$("[data-delete]").forEach(button => {
+    button.onclick = () =>
+      deleteItem(button.dataset.delete);
+  });
+
+  $$("[data-save-item-log]").forEach(button => {
+    button.onclick = () =>
+      saveItemLog(button.dataset.saveItemLog);
+  });
+
+  $$("[data-save-day-log]").forEach(button => {
+    button.onclick = () =>
+      saveDayLog(button.dataset.saveDayLog);
+  });
+
+  $$("[data-edit-item-log]").forEach(button => {
+    button.onclick = () =>
+    editItemLog(button.dataset.editItemLog);
+  });
+
+  $$("[data-delete-item-log]").forEach(button => {
+    button.onclick = () =>
+      deleteItemLog(button.dataset.deleteItemLog);
+  });
+
+  $$("[data-cancel-item-log]").forEach(button => {
+    button.onclick = cancelItemLogEdit;
+  });
+
+  $$("[data-edit-day-log]").forEach(button => {
+    button.onclick = () =>
+      editDayLog(button.dataset.editDayLog);
+  });
+
+  $$("[data-delete-day-log]").forEach(button => {
+    button.onclick = () =>
+      deleteDayLog(button.dataset.deleteDayLog);
+  });
+
+  $$("[data-cancel-day-log]").forEach(button => {
+    button.onclick = cancelDayLogEdit;
+  });
+
+  $$("[data-schedule-date]").forEach(group => {
+    group.ontoggle = () => {
+      const dateKey = group.dataset.scheduleDate;
+
+      if (!dateKey) return;
+
+      if (group.open) {
+        openScheduleDates.add(dateKey);
+      } else {
+        openScheduleDates.delete(dateKey);
+      }
+    };
+  });
+    
+} //renderitems 끝
+
 function openItemDialog(id=""){
   $("#itemForm").reset(); $("#editingItemId").value=id;
   const item=state.items.find(i=>i.id===id);

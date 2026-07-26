@@ -615,24 +615,37 @@ dialog textarea{
   }
 }
 
-/* 일정 기록 전체를 확실히 왼쪽 정렬 */
-.item-log-box,
-.item-log-editor,
-.saved-log-content {
-  width: 100% !important;
-  text-align: left !important;
+/* 일정별 기록 입력창 넓게 */
+.item-log-box{
+  width:100%;
+  margin-top:14px;
 }
 
-.item-log-editor {
-  display: block !important;
+.item-log-editor{
+  width:100%;
+  padding:0;
 }
 
-.saved-log-content {
-  display: block !important;
-  align-self: stretch !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  padding: 12px 14px !important;
-  justify-content: flex-start !important;
-  align-items: flex-start !important;
+.item-log-editor textarea{
+  width:100%;
+  min-height:180px;
+  padding:16px;
+  border-radius:14px;
+}
+
+@media(max-width:600px){
+  .item-log-box{
+    margin-top:12px;
+  }
+
+  .item-log-editor textarea{
+    min-height:150px;
+    padding:14px;
+  }
+}
+
+.item-log-box .saved-log-content{
+  width:100%;
+  padding:14px 16px;
+  min-height:72px;
 }

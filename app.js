@@ -114,23 +114,105 @@ function renderMainTabs(){
     };
   });
 }
-function renderCategories(){
-  const names=["전체",...state.categories.map(c=>c.name)];
-  if(!names.includes(state.selectedCategory))state.selectedCategory="전체";
-  $("#categoryTabs").innerHTML=names.map(name=>`<button class="category-tab ${name===state.selectedCategory?"active":""}" data-category="${esc(name)}">${esc(name)}</button>`).join("");
-  $("#categoryTabs").querySelectorAll("button").forEach(btn=>btn.onclick=()=>{state.selectedCategory=btn.dataset.category;render()});
-  $("#itemCategoryInput").innerHTML=state.categories.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join("");
-  $("#categoryManageList").innerHTML=state.categories.length?state.categories.map(c=>`
-    <div class="category-row" data-category-row="${c.id}">
-      <strong class="category-display-name">${esc(c.name)}</strong>
-      <div>
-        <button type="button" class="edit-category" data-edit-category="${c.id}" data-name="${esc(c.name)}">수정</button>
-        <button type="button" class="delete-category" data-id="${c.id}" data-name="${esc(c.name)}">삭제</button>
-      </div>
-    </div>`).join(""):`<div class="empty">카테고리가 없습니다.</div>`;
-  $("#categoryManageList").querySelectorAll(".edit-category").forEach(btn=>btn.onclick=()=>startCategoryEdit(btn.dataset.editCategory,btn.dataset.name));
-  $("#categoryManageList").querySelectorAll(".delete-category").forEach(btn=>btn.onclick=()=>deleteCategory(btn.dataset.id,btn.dataset.name));
+function renderCategories() {
+  const sectionCategories = state.categories.filter(
+    category =>
+      (category.section_type || "plan") === state.selectedSection
+  );
+
+  const names = [
+    "전체",
+    ...sectionCategories.map(category => category.name)
+  ];
+
+  if (!names.includes(state.selectedCategory)) {
+    state.selectedCategory = "전체";
+  }
+
+  $("#categoryTabs").innerHTML = names
+    .map(name => `
+      <button
+        class="category-tab ${
+          name === state.selectedCategory ? "active" : ""
+        }"
+        data-category="${esc(name)}"
+      >
+        ${esc(name)}
+      </button>
+    `)
+    .join("");
+
+  $("#categoryTabs")
+    .querySelectorAll("button")
+    .forEach(button => {
+      button.onclick = () => {
+        state.selectedCategory = button.dataset.category;
+        render();
+      };
+    });
+
+  $("#itemCategoryInput").innerHTML = sectionCategories
+    .map(category => `
+      <option value="${esc(category.name)}">
+        ${esc(category.name)}
+      </option>
+    `)
+    .join("");
+
+  $("#categoryManageList").innerHTML = sectionCategories.length
+    ? sectionCategories
+        .map(category => `
+          <div
+            class="category-row"
+            data-category-row="${category.id}"
+          >
+            <strong>${esc(category.name)}</strong>
+
+            <div>
+              <button
+                type="button"
+                class="edit-category"
+                data-edit-category="${category.id}"
+                data-name="${esc(category.name)}"
+              >
+                수정
+              </button>
+
+              <button
+                type="button"
+                class="delete-category"
+                data-id="${category.id}"
+                data-name="${esc(category.name)}"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        `)
+        .join("")
+    : `<div class="empty">이 탭의 카테고리가 없습니다.</div>`;
+
+  $("#categoryManageList")
+    .querySelectorAll(".edit-category")
+    .forEach(button => {
+      button.onclick = () =>
+        startCategoryEdit(
+          button.dataset.editCategory,
+          button.dataset.name
+        );
+    });
+
+  $("#categoryManageList")
+    .querySelectorAll(".delete-category")
+    .forEach(button => {
+      button.onclick = () =>
+        deleteCategory(
+          button.dataset.id,
+          button.dataset.name
+        );
+    });
 }
+
 function renderItems(){
   const sectionItems=state.items.filter(i=>(i.section_type||"plan")===state.selectedSection);
   const shown=sectionItems.filter(i=>state.selectedCategory==="전체"||i.category_name===state.selectedCategory);
@@ -327,16 +409,59 @@ async function deleteItem(id){
   else{const {error}=await db.from("trip_items").delete().eq("id",id);if(error)return toast(error.message);await reloadCloud()}
   toast("삭제했어요.");
 }
-async function addCategory(e){
-  e.preventDefault();
-  const name=$("#newCategoryInput").value.trim();
-  if(!name)return toast("카테고리 이름을 입력해 주세요.");
-  if(state.categories.some(c=>c.name===name))return toast("이미 있는 카테고리예요.");
-  const payload={room_code:state.roomCode,name,sort_order:state.categories.length};
-  if(!cloudEnabled){state.categories.push({id:uid(),...payload});persistLocal();render()}
-  else{const {error}=await db.from("trip_categories").insert(payload);if(error)return toast(error.message);await reloadCloud()}
-  $("#newCategoryInput").value="";toast("카테고리를 추가했어요.");
+async function addCategory(event) {
+  event.preventDefault();
+
+  const name = $("#newCategoryInput").value.trim();
+
+  if (!name) {
+    return toast("카테고리 이름을 입력해 주세요.");
+  }
+
+  const sectionCategories = state.categories.filter(
+    category =>
+      (category.section_type || "plan") === state.selectedSection
+  );
+
+  const duplicated = sectionCategories.some(
+    category => category.name === name
+  );
+
+  if (duplicated) {
+    return toast("현재 탭에 이미 있는 카테고리예요.");
+  }
+
+  const payload = {
+    room_code: state.roomCode,
+    name,
+    sort_order: sectionCategories.length,
+    section_type: state.selectedSection
+  };
+
+  if (!cloudEnabled) {
+    state.categories.push({
+      id: uid(),
+      ...payload
+    });
+
+    persistLocal();
+    render();
+  } else {
+    const { error } = await db
+      .from("trip_categories")
+      .insert(payload);
+
+    if (error) {
+      return toast(error.message);
+    }
+
+    await reloadCloud();
+  }
+
+  $("#newCategoryInput").value = "";
+  toast("카테고리를 추가했어요.");
 }
+
 function startCategoryEdit(id,currentName){
   const row=document.querySelector(`[data-category-row="${id}"]`);
   if(!row)return;
@@ -358,12 +483,26 @@ async function renameCategory(id,oldName,newValue){
   if(!cloudEnabled){
     const category=state.categories.find(c=>c.id===id);
     if(category)category.name=newName;
-    state.items.forEach(item=>{if(item.category_name===oldName)item.category_name=newName});
-    if(state.selectedCategory===oldName)state.selectedCategory=newName;
+    state.items.forEach(item => {
+      const itemSection = item.section_type || "plan";
+
+      if (
+        itemSection === state.selectedSection &&
+        item.category_name === oldName
+      ) {
+        item.category_name = newName;
+      }
+    }); 
     persistLocal();render();
   }else{
-    const {error:itemError}=await db.from("trip_items").update({category_name:newName})
-      .eq("room_code",state.roomCode).eq("category_name",oldName);
+    const { error: itemError } = await db
+      .from("trip_items")
+      .update({
+        category_name: newName
+      })
+      .eq("room_code", state.roomCode)
+      .eq("section_type", state.selectedSection)
+      .eq("category_name", oldName);
     if(itemError)return toast(itemError.message);
     const {error:categoryError}=await db.from("trip_categories").update({name:newName}).eq("id",id);
     if(categoryError)return toast(categoryError.message);
@@ -372,6 +511,7 @@ async function renameCategory(id,oldName,newValue){
   }
   toast("카테고리 이름을 수정했어요.");
 }
+
 async function deleteCategory(id,name){
   if(state.categories.length===1)return toast("카테고리는 한 개 이상 필요해요.");
   const used=state.items.some(i=>i.category_name===name);

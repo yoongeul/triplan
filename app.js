@@ -1020,7 +1020,7 @@ function renderItems() {
 
     const linkRow = `
       <div class="candidate-link-row">
-        <span class="candidate-link-label">후보</span>
+        <span class="candidate-link-label">참고</span>
 
         <div class="candidate-link-list">
           ${
@@ -1042,7 +1042,7 @@ function renderItems() {
                           <button
                             type="button"
                             data-link-edit="${link.id}"
-                            aria-label="후보 수정"
+                            aria-label="참고 수정"
                           >
                             수정
                           </button>
@@ -1051,7 +1051,7 @@ function renderItems() {
                             type="button"
                             class="danger"
                             data-link-delete="${link.id}"
-                            aria-label="후보 삭제"
+                            aria-label="참고 삭제"
                           >
                             삭제
                           </button>
@@ -1060,7 +1060,7 @@ function renderItems() {
                       `
                     )
                   .join("")
-              : `<span class="candidate-link-empty">등록된 후보 없음</span>`
+              : `<span class="candidate-link-empty">등록된 참고 없음</span>`
           }
 
           <button
@@ -1068,7 +1068,7 @@ function renderItems() {
             class="candidate-add-btn"
             data-link-add="${item.id}"
           >
-            ＋ 후보
+            ＋ 참고
           </button>
         </div>
       </div>
@@ -2004,11 +2004,11 @@ async function saveSettings(e){
 }
 
 async function addItemLink(itemId) {
-  const title = prompt("후보 이름을 입력하세요.\n예: 호텔 닛코 후쿠오카");
+  const title = prompt("참고 이름을 입력하세요.\n예: 호텔 닛코 후쿠오카");
 
   if (!title?.trim()) return;
 
-  let url = prompt("후보 링크를 붙여넣으세요.");
+  let url = prompt("참고 링크를 붙여넣으세요.");
 
   if (!url?.trim()) return;
 
@@ -2037,7 +2037,7 @@ async function addItemLink(itemId) {
     return toast(error.message);
   }
 
-  toast("후보 링크를 추가했어요.");
+  toast("참고 링크를 추가했어요.");
   await reloadCloud();
 }
 
@@ -2112,13 +2112,13 @@ async function editItemLink(linkId) {
   );
 
   if (!link) {
-    return toast("후보 링크를 찾지 못했어요.");
+    return toast("참고 링크를 찾지 못했어요.");
   }
 
-  const title = prompt("후보 이름을 수정하세요.", link.title);
+  const title = prompt("참고 이름을 수정하세요.", link.title);
   if (!title?.trim()) return;
 
-  let url = prompt("후보 링크를 수정하세요.", link.url);
+  let url = prompt("참고 링크를 수정하세요.", link.url);
   if (!url?.trim()) return;
 
   url = url.trim();
@@ -2139,7 +2139,7 @@ async function editItemLink(linkId) {
     return toast(error.message);
   }
 
-  toast("후보 링크를 수정했어요.");
+  toast("참고 링크를 수정했어요.");
   await reloadCloud();
 }
 
@@ -2149,10 +2149,10 @@ async function deleteItemLink(linkId) {
   );
 
   if (!link) {
-    return toast("후보 링크를 찾지 못했어요.");
+    return toast("참고 링크를 찾지 못했어요.");
   }
 
-  const ok = confirm(`"${link.title}" 후보를 삭제할까요?`);
+  const ok = confirm(`"${link.title}" 참고를 삭제할까요?`);
   if (!ok) return;
 
   const { error } = await db
@@ -2164,7 +2164,7 @@ async function deleteItemLink(linkId) {
     return toast(error.message);
   }
 
-  toast("후보 링크를 삭제했어요.");
+  toast("참고 링크를 삭제했어요.");
   await reloadCloud();
 }
 

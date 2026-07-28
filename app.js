@@ -12,6 +12,7 @@ const state = {
   itemLogs: [],
   dayLogs: [],
   items: [],
+  itemLinks: [],
 
   ui: {
     selectedCategory: "전체",
@@ -113,13 +114,12 @@ async function openRoom(){
   showApp();
 }
 
-async function reloadCloud(){
+async function reloadCloud() {
   const [
     { data: cats, error: catErr },
     { data: participants, error: partErr },
     { data: items, error: itemErr },
-    { data: itemLogs, error: itemLogErr },
-    { data: dayLogs, error: dayLogErr }
+    { data: links, error: linkErr }
   ] = await Promise.all([
     db
       .from("trip_categories")
@@ -140,34 +140,28 @@ async function reloadCloud(){
       .order("created_at"),
 
     db
-      .from("trip_item_logs")
-      .select("*")
-      .eq("room_code", state.roomCode),
-
-    db
-      .from("trip_day_logs")
+      .from("trip_item_links")
       .select("*")
       .eq("room_code", state.roomCode)
-      .order("log_date")
+      .order("sort_order")
+      .order("created_at")
   ]);
 
-  const error =
-    catErr ||
-    partErr ||
-    itemErr ||
-    itemLogErr ||
-    dayLogErr;
+  const error = catErr || partErr || itemErr || linkErr;
 
-  if (error) return toast(error.message);
+  if (error) {
+    return toast(error.message);
+  }
 
   state.categories = cats || [];
   state.participants = participants || [];
   state.items = items || [];
-  state.itemLogs = itemLogs || [];
-  state.dayLogs = dayLogs || [];
+  state.itemLinks = links || [];
 
   render();
 }
+
+
 
 function subscribeRoom(){
   if(state.channel)db.removeChannel(state.channel);
@@ -671,6 +665,66 @@ function renderItems() {
         `
         : "";
 
+    const itemLinks = (state.itemLinks || []).filter(
+      link => String(link.item_id) === String(item.id)
+    );
+
+    const linkRow = `
+      <div class="candidate-link-row">
+        <span class="candidate-link-label">후보</span>
+
+        <div class="candidate-link-list">
+          ${
+            itemLinks.length
+              ? itemLinks
+                  .map(
+                    link => `
+                      <span class="candidate-link-item">
+                        <a
+                          href="${esc(link.url)}"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="${esc(link.title)}"
+                        >
+                          ${esc(link.title)}
+                        </a>
+
+                        <div class="candidate-link-actions">
+                          <button
+                            type="button"
+                            data-link-edit="${link.id}"
+                            aria-label="후보 수정"
+                          >
+                            수정
+                          </button>
+
+                          <button
+                            type="button"
+                            class="danger"
+                            data-link-delete="${link.id}"
+                            aria-label="후보 삭제"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </span>
+                      `
+                    )
+                  .join("")
+              : `<span class="candidate-link-empty">등록된 후보 없음</span>`
+          }
+
+          <button
+            type="button"
+            class="candidate-add-btn"
+            data-link-add="${item.id}"
+          >
+            ＋ 후보
+          </button>
+        </div>
+      </div>
+    `;        
+
     return `
       <article
         class="item-card
@@ -738,6 +792,7 @@ function renderItems() {
           </div>
 
         ${reservation}
+        ${item.reservation_required ? linkRow : ""}
         ${logArea}
         </div>
 
@@ -1114,6 +1169,7 @@ function updateItemSectionFields(){
   $("#itemTitleLabel").textContent=isSchedule?"일정 이름":"준비 항목";
   $("#itemTitleInput").placeholder=isSchedule?"예: 해수욕장 이동":"예: 렌터카 예약";
 }
+
 function updateReservationFields(){
   $("#reservationFields").hidden=!$("#reservationRequiredInput").checked;
 }
@@ -1130,6 +1186,7 @@ function updateReservationImagePreview(){
     preview.hidden=true;
   }
 }
+
 function resizeImageToDataUrl(file,maxWidth=1400,quality=.82){
   return new Promise((resolve,reject)=>{
     if(!file.type.startsWith("image/"))return reject(new Error("이미지 파일만 첨부할 수 있어요."));
@@ -1152,6 +1209,7 @@ function resizeImageToDataUrl(file,maxWidth=1400,quality=.82){
     reader.readAsDataURL(file);
   });
 }
+
 async function storeReservationImage(file){
   const dataUrl=await resizeImageToDataUrl(file);
   if(!cloudEnabled)return dataUrl;
@@ -1167,6 +1225,7 @@ async function storeReservationImage(file){
   const {data}=db.storage.from("trip-attachments").getPublicUrl(path);
   return data.publicUrl;
 }
+
 async function handleReservationImage(file){
   try{
     toast("사진 처리 중...");
@@ -1385,6 +1444,7 @@ function startCategoryEdit(id,currentName){
   row.querySelector(".delete-category").onclick=renderCategories;
   row.querySelector("input").focus();
 }
+
 async function renameCategory(id,oldName,newValue){
   const newName=newValue.trim();
   if(!newName)return toast("카테고리 이름을 입력해 주세요.");
@@ -1521,6 +1581,7 @@ async function addParticipant(){
   input.value="";
   toast("참여자를 추가했어요.");
 }
+
 async function deleteParticipant(id,name){
   const used=state.items.some(i=>i.owner===name);
   if(used)return toast("담당자로 지정된 항목이 있어 먼저 담당자를 해제해 주세요.");
@@ -1535,7 +1596,6 @@ async function deleteParticipant(id,name){
   }
   toast("참여자를 삭제했어요.");
 }
-
 
 async function saveTripInfo(){
   const destination=$("#tripDestinationInput").value.trim();
@@ -1568,12 +1628,51 @@ async function saveTripInfo(){
 function renderSettings(){
   $("#tripNameInput").value=state.trip.name||"";
 }
+
 async function saveSettings(e){
   e.preventDefault();
   const payload={name:$("#tripNameInput").value.trim()||"우리들의 여행"};
   if(!cloudEnabled){state.trip={...state.trip,...payload};persistLocal();render()}
   else{const {error}=await db.from("trips").update(payload).eq("room_code",state.roomCode);if(error)return toast(error.message);state.trip={...state.trip,...payload};render()}
   $("#settingsDialog").close();toast("설정을 저장했어요.");
+}
+
+async function addItemLink(itemId) {
+  const title = prompt("후보 이름을 입력하세요.\n예: 호텔 닛코 후쿠오카");
+
+  if (!title?.trim()) return;
+
+  let url = prompt("후보 링크를 붙여넣으세요.");
+
+  if (!url?.trim()) return;
+
+  url = url.trim();
+
+  // https:// 없이 붙여넣어도 정상적으로 열리게
+  if (!/^https?:\/\//i.test(url)) {
+    url = `https://${url}`;
+  }
+
+  const sameItemLinks = (state.itemLinks || []).filter(
+    link => String(link.item_id) === String(itemId)
+  );
+
+  const { error } = await db
+    .from("trip_item_links")
+    .insert({
+      room_code: state.roomCode,
+      item_id: itemId,
+      title: title.trim(),
+      url,
+      sort_order: sameItemLinks.length
+    });
+
+  if (error) {
+    return toast(error.message);
+  }
+
+  toast("후보 링크를 추가했어요.");
+  await reloadCloud();
 }
 
 $("#joinBtn").onclick=openRoom;
@@ -1592,18 +1691,118 @@ if ($("#saveTripInfoBtn")) {
   $("#saveTripInfoBtn").onclick = saveTripInfo;
 }
 $("#addParticipantBtn").onclick=addParticipant;
+
 function closeDialogFromButton(button){
   const dialog=button.closest("dialog");
   if(dialog?.open)dialog.close();
 }
-document.addEventListener("click",e=>{
-  const closeButton=e.target.closest("[data-close-dialog],.close-dialog");
-  if(closeButton){
+
+document.addEventListener("click", async e => {
+  const linkAddBtn = e.target.closest("[data-link-add]");
+
+  if (linkAddBtn) {
+    e.preventDefault();
+
+    const itemId = linkAddBtn.dataset.linkAdd;
+    await addItemLink(itemId);
+    return;
+  }
+
+  const linkEditBtn = e.target.closest("[data-link-edit]");
+
+  if (linkEditBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    await editItemLink(linkEditBtn.dataset.linkEdit);
+    return;
+  }
+
+  const linkDeleteBtn = e.target.closest("[data-link-delete]");
+
+  if (linkDeleteBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    await deleteItemLink(linkDeleteBtn.dataset.linkDelete);
+    return;
+  }
+
+  const closeButton = e.target.closest(
+    "[data-close-dialog],.close-dialog"
+  );
+
+  if (closeButton) {
     e.preventDefault();
     e.stopPropagation();
     closeDialogFromButton(closeButton);
+    return;
   }
 });
+
+async function editItemLink(linkId) {
+  const link = (state.itemLinks || []).find(
+    row => String(row.id) === String(linkId)
+  );
+
+  if (!link) {
+    return toast("후보 링크를 찾지 못했어요.");
+  }
+
+  const title = prompt("후보 이름을 수정하세요.", link.title);
+  if (!title?.trim()) return;
+
+  let url = prompt("후보 링크를 수정하세요.", link.url);
+  if (!url?.trim()) return;
+
+  url = url.trim();
+
+  if (!/^https?:\/\//i.test(url)) {
+    url = `https://${url}`;
+  }
+
+  const { error } = await db
+    .from("trip_item_links")
+    .update({
+      title: title.trim(),
+      url
+    })
+    .eq("id", link.id);
+
+  if (error) {
+    return toast(error.message);
+  }
+
+  toast("후보 링크를 수정했어요.");
+  await reloadCloud();
+}
+
+async function deleteItemLink(linkId) {
+  const link = (state.itemLinks || []).find(
+    row => String(row.id) === String(linkId)
+  );
+
+  if (!link) {
+    return toast("후보 링크를 찾지 못했어요.");
+  }
+
+  const ok = confirm(`"${link.title}" 후보를 삭제할까요?`);
+  if (!ok) return;
+
+  const { error } = await db
+    .from("trip_item_links")
+    .delete()
+    .eq("id", link.id);
+
+  if (error) {
+    return toast(error.message);
+  }
+
+  toast("후보 링크를 삭제했어요.");
+  await reloadCloud();
+}
+
+
 $$("dialog").forEach(dialog=>{
   dialog.addEventListener("click",e=>{
     if(e.target===dialog)dialog.close();

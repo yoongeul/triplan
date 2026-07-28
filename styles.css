@@ -788,3 +788,140 @@ dialog textarea{
     font-size:12px;
   }
 }
+
+/* =========================================================
+   항목별 후보 링크
+   PC: 한 줄 / 모바일: 세로
+   ========================================================= */
+
+.candidate-link-row{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  width:100%;
+  min-width:0;
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px solid var(--line);
+}
+
+.candidate-link-label{
+  flex:0 0 auto;
+  padding-top:9px;
+  font-size:12px;
+  font-weight:900;
+  color:var(--muted);
+}
+
+.candidate-link-list{
+  display:flex;
+  align-items:stretch;
+  flex-wrap:wrap;
+  gap:8px;
+  min-width:0;
+}
+
+.candidate-link-item{
+  display:inline-flex;
+  align-items:center;
+  flex:0 0 auto;
+  min-width:200px;
+  max-width:320px;
+  min-height:40px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fff;
+  overflow:hidden;
+}
+
+.candidate-link-item > a{
+  display:block;
+  flex:1;
+  min-width:10ch;
+  max-width:20ch;
+  padding:10px 12px;
+  color:#3d7085;
+  font-size:13px;
+  font-weight:800;
+  text-decoration:none;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.candidate-link-actions{
+  display:flex;
+  flex:0 0 auto;
+  align-items:stretch;
+  align-self:stretch;
+  border-left:1px solid var(--line);
+}
+
+.candidate-link-actions button{
+  border:0;
+  border-radius:0;
+  padding:0 10px;
+  background:#f7f5f1;
+  color:var(--text);
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.candidate-link-actions button + button{
+  border-left:1px solid var(--line);
+}
+
+.candidate-link-actions button.danger{
+  color:#b42318;
+}
+
+.candidate-add-btn{
+  flex:0 0 auto;
+  min-height:40px;
+  border:1px dashed #c9b98f;
+  border-radius:12px;
+  padding:8px 12px;
+  background:#fffaf0;
+  color:#8b6b21;
+  font-size:12px;
+  font-weight:900;
+}
+
+.candidate-link-empty{
+  padding-top:10px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+@media(max-width:600px){
+  .candidate-link-row{
+    display:block;
+  }
+
+  .candidate-link-label{
+    display:block;
+    padding:0;
+    margin-bottom:8px;
+  }
+
+  .candidate-link-list{
+    flex-direction:column;
+    width:100%;
+  }
+
+  .candidate-link-item{
+    width:100%;
+    min-width:0;
+    max-width:none;
+  }
+
+  .candidate-link-item > a{
+    min-width:0;
+    max-width:none;
+  }
+
+  .candidate-add-btn{
+    width:100%;
+  }
+}

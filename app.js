@@ -4,6 +4,318 @@ const SUPABASE_ANON_KEY = "sb_publishable_CPjg5G9P9_j9omT4LxH7DQ_S-FKlArB";
 const cloudEnabled = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const db = cloudEnabled ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+let currentUser = null;
+let currentProfile = null;
+
+function setAuthMessage(message = "", isSuccess = false) {
+  const el = document.getElementById("authMessage");
+
+  if (!el) return;
+
+  el.textContent = message;
+  el.style.color = isSuccess
+    ? "var(--ok)"
+    : "var(--danger)";
+}
+
+function setAuthLoading(isLoading) {
+  const buttons = document.querySelectorAll(
+    "#authScreen button"
+  );
+
+  buttons.forEach(button => {
+    button.disabled = isLoading;
+  });
+}
+
+function showAuthScreen() {
+  const authScreen = document.getElementById("authScreen");
+  const appView = document.getElementById("appView");
+
+  if (authScreen) {
+    authScreen.style.display = "flex";
+  }
+
+  if (appView) {
+    appView.hidden = true;
+  }
+}
+
+async function showAppScreen(user) {
+  currentUser = user;
+
+  const authScreen = document.getElementById("authScreen");
+
+  if (authScreen) {
+    authScreen.style.display = "none";
+  }
+
+  await loadCurrentProfile();
+  renderCurrentUser();
+
+  /*
+    appView는 여기서 열지 않음.
+    기존 '체크리스트 열기' 기능이 여행방 입장 후 열도록 둔다.
+  */
+}
+
+async function loadCurrentProfile() {
+  if (!currentUser) return;
+
+  const { data, error } = await db
+    .from("profiles")
+    .select("*")
+    .eq("id", currentUser.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("프로필 조회 오류:", error);
+    return;
+  }
+
+  if (data) {
+    currentProfile = data;
+    return;
+  }
+
+  const displayName =
+    currentUser.user_metadata?.display_name ||
+    currentUser.email?.split("@")[0] ||
+    "여행자";
+
+  const { data: newProfile, error: insertError } = await db
+    .from("profiles")
+    .insert({
+      id: currentUser.id,
+      display_name: displayName
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    console.error("프로필 생성 오류:", insertError);
+    return;
+  }
+
+  currentProfile = newProfile;
+}
+
+function renderCurrentUser() {
+  const nameEl = document.getElementById("currentUserName");
+
+  if (!nameEl) return;
+
+  const displayName =
+    currentProfile?.display_name ||
+    currentUser?.user_metadata?.display_name ||
+    currentUser?.email?.split("@")[0] ||
+    "여행자";
+
+  nameEl.textContent = `${displayName}`;
+}
+
+async function signUp() {
+  const name = document
+    .getElementById("authName")
+    ?.value
+    .trim();
+
+  const email = document
+    .getElementById("authEmail")
+    ?.value
+    .trim();
+
+  const password = document
+    .getElementById("authPassword")
+    ?.value;
+
+  if (!name) {
+    return setAuthMessage("사용할 이름을 입력해 주세요.");
+  }
+
+  if (!email) {
+    return setAuthMessage("이메일을 입력해 주세요.");
+  }
+
+  if (!password || password.length < 6) {
+    return setAuthMessage("비밀번호는 6자 이상 입력해 주세요.");
+  }
+
+  setAuthLoading(true);
+  setAuthMessage("");
+
+  try {
+    const { data, error } = await db.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: name
+        }
+      }
+    });
+
+    if (error) throw error;
+
+    const user = data.user;
+
+    if (!user) {
+      throw new Error("회원 정보를 만들지 못했습니다.");
+    }
+
+    /*
+      이메일 확인 설정이 켜져 있으면
+      회원가입 직후 session이 없을 수 있다.
+    */
+    if (!data.session) {
+      setAuthMessage(
+        "회원가입 완료! 이메일 인증 후 로그인해 주세요.",
+        true
+      );
+
+      return;
+    }
+
+    const { error: profileError } = await db
+      .from("profiles")
+      .upsert(
+        {
+          id: user.id,
+          display_name: name,
+          updated_at: new Date().toISOString()
+        },
+        {
+          onConflict: "id"
+        }
+      );
+
+    if (profileError) throw profileError;
+
+    setAuthMessage("회원가입이 완료되었습니다.", true);
+    await showAppScreen(user);
+
+  } catch (error) {
+    console.error("회원가입 오류:", error);
+    setAuthMessage(
+      getAuthErrorMessage(error)
+    );
+
+  } finally {
+    setAuthLoading(false);
+  }
+}
+
+async function signIn() {
+  const email = document
+    .getElementById("authEmail")
+    ?.value
+    .trim();
+
+  const password = document
+    .getElementById("authPassword")
+    ?.value;
+
+  if (!email || !password) {
+    return setAuthMessage(
+      "이메일과 비밀번호를 모두 입력해 주세요."
+    );
+  }
+
+  setAuthLoading(true);
+  setAuthMessage("");
+
+  try {
+    const { data, error } =
+      await db.auth.signInWithPassword({
+        email,
+        password
+      });
+
+    if (error) throw error;
+
+    await showAppScreen(data.user);
+
+  } catch (error) {
+    console.error("로그인 오류:", error);
+    setAuthMessage(
+      getAuthErrorMessage(error)
+    );
+
+  } finally {
+    setAuthLoading(false);
+  }
+}
+
+async function signOut() {
+  const { error } = await db.auth.signOut();
+
+  if (error) {
+    console.error("로그아웃 오류:", error);
+    return;
+  }
+
+  currentUser = null;
+  currentProfile = null;
+
+  showAuthScreen();
+  setAuthMessage("로그아웃되었습니다.", true);
+}
+
+function getAuthErrorMessage(error) {
+  const message = error?.message || "";
+
+  if (message.includes("Invalid login credentials")) {
+    return "이메일 또는 비밀번호가 맞지 않습니다.";
+  }
+
+  if (message.includes("Email not confirmed")) {
+    return "이메일 인증을 먼저 완료해 주세요.";
+  }
+
+  if (message.includes("User already registered")) {
+    return "이미 가입된 이메일입니다.";
+  }
+
+  if (message.includes("Password should be")) {
+    return "비밀번호는 6자 이상 입력해 주세요.";
+  }
+
+  if (message.includes("Unable to validate email address")) {
+    return "이메일 주소를 다시 확인해 주세요.";
+  }
+
+  return message || "처리 중 오류가 발생했습니다.";
+}
+
+async function initializeAuth() {
+  const {
+    data: { session },
+    error
+  } = await db.auth.getSession();
+
+  if (error) {
+    console.error("세션 확인 오류:", error);
+    showAuthScreen();
+    return;
+  }
+
+  if (session?.user) {
+    await showAppScreen(session.user);
+  } else {
+    showAuthScreen();
+  }
+}
+
+db.auth.onAuthStateChange((event, session) => {
+  if (event === "SIGNED_OUT") {
+    currentUser = null;
+    currentProfile = null;
+    showAuthScreen();
+  }
+});
+
+initializeAuth();
+
 const state = {
   roomCode: localStorage.getItem("tripRoomCode") || "",
   trip: null,
@@ -153,9 +465,46 @@ async function reloadCloud() {
     return toast(error.message);
   }
 
+  const creatorIds = [
+    ...new Set(
+      (items || [])
+        .map(item => item.created_by)
+        .filter(Boolean)
+    )
+  ];
+
+  let profileMap = {};
+
+  if (creatorIds.length > 0) {
+    const {
+      data: profiles,
+      error: profileErr
+    } = await db
+      .from("profiles")
+      .select("id, display_name")
+      .in("id", creatorIds);
+
+    if (profileErr) {
+      console.error("작성자 조회 오류:", profileErr);
+    } else {
+      profileMap = Object.fromEntries(
+        (profiles || []).map(profile => [
+          profile.id,
+          profile.display_name
+        ])
+      );
+    }
+  }
+
   state.categories = cats || [];
   state.participants = participants || [];
-  state.items = items || [];
+
+  state.items = (items || []).map(item => ({
+    ...item,
+    creator_name:
+      profileMap[item.created_by] || ""
+  }));
+
   state.itemLinks = links || [];
 
   render();
@@ -758,6 +1107,15 @@ function renderItems() {
               ? `<p class="item-note">${esc(item.note)}</p>`
               : ""
           }
+          ${
+            item.creator_name
+              ? `
+                <div class="item-creator">
+                  ${esc(item.creator_name)} 작성
+                </div>
+              `
+              : ""
+          }
 
           <div class="meta">
             <span class="badge category">
@@ -1316,6 +1674,14 @@ async function saveItem(e) {
         ? $("#reservationImageValue").value
         : ""
   };
+
+  if (!id) {
+  if (!currentUser) {
+    return toast("로그인이 필요합니다.");
+  }
+
+  payload.created_by = currentUser.id;
+  }  
 
   if (!payload.title) {
     return toast("준비 항목을 입력해 주세요.");

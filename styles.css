@@ -925,3 +925,170 @@ dialog textarea{
     width:100%;
   }
 }
+
+/* =========================================================
+   로그인
+   ========================================================= */
+
+.auth-screen{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:
+    linear-gradient(
+      160deg,
+      var(--bg) 0%,
+      #fff 55%,
+      #fff8dd 100%
+    );
+}
+
+.auth-card{
+  width:min(100%, 420px);
+  padding:32px 26px;
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:var(--card);
+  box-shadow:var(--shadow);
+}
+
+.auth-logo{
+  margin-bottom:8px;
+  font-size:42px;
+  text-align:center;
+}
+
+.auth-card h1{
+  margin:0;
+  text-align:center;
+  font-size:30px;
+}
+
+.auth-description{
+  margin:8px 0 28px;
+  text-align:center;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.auth-field{
+  display:block;
+  margin-top:16px;
+}
+
+.auth-field span{
+  display:block;
+  margin-bottom:7px;
+  font-size:13px;
+  font-weight:800;
+}
+
+.auth-field input{
+  width:100%;
+  height:48px;
+  padding:0 14px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fff;
+  color:var(--text);
+  font:inherit;
+}
+
+.auth-field input:focus{
+  outline:2px solid var(--accent);
+  outline-offset:1px;
+}
+
+.auth-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:24px;
+}
+
+.auth-actions button{
+  min-height:46px;
+}
+
+.auth-message{
+  min-height:20px;
+  margin:14px 0 0;
+  text-align:center;
+  color:var(--danger);
+  font-size:13px;
+  font-weight:700;
+}
+
+@media (max-width:520px){
+  .auth-screen{
+    align-items:flex-start;
+    padding:50px 16px 24px;
+  }
+
+  .auth-card{
+    padding:28px 20px;
+    border-radius:20px;
+  }
+}
+
+/* 로그인 사용자 표시 */
+
+.user-bar{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  margin:0 0 14px;
+  padding:0 4px;
+}
+
+.current-user-name{
+  display:inline-flex;
+  align-items:center;
+  min-height:34px;
+  padding:0 12px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:rgba(255,255,255,.72);
+  color:var(--text);
+  font-size:13px;
+  font-weight:800;
+}
+
+.logout-btn{
+  min-height:34px;
+  padding:0 12px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:transparent;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.logout-btn:hover{
+  background:rgba(255,255,255,.78);
+  color:var(--text);
+}
+
+@media (max-width:520px){
+  .user-bar{
+    margin-bottom:10px;
+  }
+
+  .current-user-name,
+  .logout-btn{
+    min-height:32px;
+    padding:0 10px;
+  }
+}
+
+.item-creator{
+  margin:8px 0 6px;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:700;
+}

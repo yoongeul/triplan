@@ -9,6 +9,67 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+    <!-- 로그인 화면 -->
+  <section id="authScreen" class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-logo">✈️</div>
+
+      <h1>TRIPLAN</h1>
+      <p class="auth-description">
+        함께 계획하고 기록하는 여행
+      </p>
+
+      <label class="auth-field">
+        <span>이름</span>
+        <input
+          id="authName"
+          type="text"
+          placeholder="앱에서 사용할 이름"
+          autocomplete="name"
+        >
+      </label>
+
+      <label class="auth-field">
+        <span>이메일</span>
+        <input
+          id="authEmail"
+          type="email"
+          placeholder="example@email.com"
+          autocomplete="email"
+        >
+      </label>
+
+      <label class="auth-field">
+        <span>비밀번호</span>
+        <input
+          id="authPassword"
+          type="password"
+          placeholder="6자 이상 입력"
+          autocomplete="current-password"
+        >
+      </label>
+
+      <div class="auth-actions">
+        <button
+          type="button"
+          class="btn primary"
+          onclick="signIn()"
+        >
+          로그인
+        </button>
+
+        <button
+          type="button"
+          class="btn"
+          onclick="signUp()"
+        >
+          회원가입
+        </button>
+      </div>
+
+      <p id="authMessage" class="auth-message"></p>
+    </div>
+  </section>
   <header class="topbar">
     <div>
       <p class="eyebrow">TRIPLAN</p>
@@ -30,6 +91,19 @@
     </section>
 
     <section id="appView" hidden>
+      <div class="user-bar">
+        <span id="currentUserName" class="current-user-name">
+          👤 여행자
+        </span>
+
+        <button
+          type="button"
+          class="logout-btn"
+          onclick="signOut()"
+        >
+          로그아웃
+        </button>
+      </div>
       <section class="summary card trip-summary">
         <div class="trip-summary-head">
           <div>

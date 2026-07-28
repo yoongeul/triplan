@@ -1068,7 +1068,7 @@ function renderItems() {
             class="candidate-add-btn"
             data-link-add="${item.id}"
           >
-            ＋ 참고
+            ＋
           </button>
         </div>
       </div>
